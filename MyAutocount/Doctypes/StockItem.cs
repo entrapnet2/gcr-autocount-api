@@ -247,6 +247,7 @@ namespace GCR_autocount_api.Doctypes
                 Utils.Log("Saved data done.");
 
                 Utils.Log($"Saved {itemCode} successfully");
+                PublishEvent("stock.item", "created", itemCode, new { itemCode, description = itemEntity.Description });
                 return $"{DoctypeName} added: {itemCode}";
 
             }
@@ -308,6 +309,7 @@ namespace GCR_autocount_api.Doctypes
 
                 cmd.SaveData(itemEntity);
                 Utils.Log($"Edited {itemCode} successfully");
+                PublishEvent("stock.item", "updated", itemCode, new { itemCode, description = itemEntity.Description });
                 return $"{DoctypeName} edited: {itemCode}";
             }
             return $"{DoctypeName} edit error: Login failed";
@@ -322,6 +324,7 @@ namespace GCR_autocount_api.Doctypes
                     AutoCount.Stock.Item.ItemDataAccess.Create(userSession, userSession.DBSetting);
                 cmd.Delete(itemCode);
                 Utils.Log($"Deleted {itemCode} successfully");
+                PublishEvent("stock.item", "deleted", itemCode);
                 return $"{DoctypeName} deleted: {itemCode}";
             }
             return $"{DoctypeName} delete error: Login failed";

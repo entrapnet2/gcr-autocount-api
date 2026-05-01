@@ -146,6 +146,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
 
                 cmd.SaveCreditor(creditorEntity, userSession.LoginUserID);
                 Log($"{DoctypeName} added: {creditorCode}");
+                PublishEvent("master.creditor", "created", creditorCode, new { creditorCode, companyName = creditorEntity.CompanyName });
                 return $"{DoctypeName} added: {creditorCode}";
             }
             Log($"{DoctypeName} add error: Login failed");
@@ -188,6 +189,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
 
                 cmd.SaveCreditor(creditorEntity, userSession.LoginUserID);
                 Log($"{DoctypeName} edited: {creditorCode}");
+                PublishEvent("master.creditor", "updated", creditorCode, new { creditorCode, companyName = creditorEntity.CompanyName });
                 return $"{DoctypeName} edited: {creditorCode}";
             }
             Log($"{DoctypeName} edit error: Login failed");
@@ -204,6 +206,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
                 cmd.DeleteCreditor(creditorCode);
 
                 Log($"{DoctypeName} deleted: {creditorCode}");
+                PublishEvent("master.creditor", "deleted", creditorCode);
                 return $"{DoctypeName} deleted: {creditorCode}";
             }
             return $"{DoctypeName} delete error: Login failed";
