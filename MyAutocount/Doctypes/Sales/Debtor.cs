@@ -173,6 +173,7 @@ namespace GCR_autocount_api.Doctypes.Sales
 
                     cmd.SaveDebtor(debtorEntity, userSession.LoginUserID);
                     Log($"{DoctypeName} added: {debtorCode}");
+                    PublishEvent("master.debtor", "created", debtorCode, new { debtorCode, companyName = debtorEntity.CompanyName });
                     return $"{DoctypeName} added: {debtorCode}";
                 }
                 catch (Exception ex)
@@ -232,6 +233,7 @@ namespace GCR_autocount_api.Doctypes.Sales
 
                 cmd.SaveDebtor(debtorEntity, userSession.LoginUserID);
                 Log($"{DoctypeName} edited: {debtorCode}");
+                PublishEvent("master.debtor", "updated", debtorCode, new { debtorCode, companyName = debtorEntity.CompanyName });
                 return $"{DoctypeName} edited: {debtorCode}";
 
             }
@@ -253,6 +255,7 @@ namespace GCR_autocount_api.Doctypes.Sales
                 cmd.DeleteDebtor(debtorCode);
 
                 Log($"{DoctypeName} deleted: {debtorCode}");
+                PublishEvent("master.debtor", "deleted", debtorCode);
                 return $"{DoctypeName} deleted: {debtorCode}";
             }
             return $"{DoctypeName} delete error: Login failed";

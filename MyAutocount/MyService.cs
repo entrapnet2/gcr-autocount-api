@@ -6,15 +6,22 @@ using System.Threading.Tasks;
 using Nancy;
 using Nancy.Hosting.Self;
 using System.Net;
-
+using GCR_autocount_api.NATS;
+ 
 namespace GCR_autocount_api
 {
     class MyService
     {
         NancyHost nancyHost;
+        NatsService natsService;
+
+        public static NatsService Nats => Instance?.natsService;
+        private static MyService Instance;
 
         public bool Start(string username = "KENNY", string password = "1111")
         {
+            Instance = this;
+            
             try
             {
                 HostConfiguration hostConfigs = new HostConfiguration()
@@ -33,6 +40,8 @@ namespace GCR_autocount_api
                 Utils.Log($"Running on http://{Auth.ipAddress}:{Auth.port}");
                 Utils.Log($"Swagger UI: http://{Auth.ipAddress}:{Auth.port}/swagger");
 
+                InitNats();
+
                 return true;
             }
             catch (Exception ex)
@@ -42,8 +51,32 @@ namespace GCR_autocount_api
             }
         }
 
+        private void InitNats()
+        {
+            try
+            {
+                var config = NatsConfig.Load();
+                natsService = new NatsService();
+                
+                if (natsService.Connect(config))
+                {
+                    Utils.Log($"NATS: Connected to {config.Url}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.Log($"NATS: Init error - {ex.Message}");
+            }
+        }
+
         public bool Stop()
         {
+            if (natsService != null)
+            {
+                natsService.Dispose();
+                natsService = null;
+            }
+            
             if (nancyHost != null)
             {
                 nancyHost.Stop();

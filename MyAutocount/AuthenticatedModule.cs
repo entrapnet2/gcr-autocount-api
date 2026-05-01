@@ -2,11 +2,22 @@ using System;
 using System.Linq;
 using Nancy;
 using static GCR_autocount_api.Utils;
+using GCR_autocount_api.NATS;
 
 namespace GCR_autocount_api
 {
     public abstract class AuthenticatedModule : NancyModule
     {
+        protected NatsService Nats => MyService.Nats;
+        
+        protected void PublishEvent(string entity, string action, string docNo, object data = null)
+        {
+            if (Nats != null && Nats.IsConnected)
+            {
+                Nats.PublishEvent(entity, action, docNo, data);
+            }
+        }
+        
         protected AuthenticatedModule()
         {
             Before.AddItemToEndOfPipeline(ValidateJwtToken);
