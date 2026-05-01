@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>GCR_autocount_api</RootNamespace>
+    <AssemblyName>GCR-autocount-api</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoCount2.MainEntry" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.Sales" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.Purchase" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.Stock" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.ARAP" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.Invoicing" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.Inquiry" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.Accounting" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.Accounting.UI" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.UI" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.GST" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.Manufacturing" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.Tools" Version="2.2.26" />
+    <PackageReference Include="AutoCount2.FinancialReport" Version="2.2.26" />
+    <PackageReference Include="DevExpress.Utils" Version="22.2.7" />
+    <PackageReference Include="Nancy" Version="2.0.0" />
+    <PackageReference Include="Nancy.Hosting.Self" Version="2.0.0" />
+    <PackageReference Include="Topshelf" Version="4.3.0" />
+    <PackageReference Include="log4net" Version="2.0.17" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+</Project>

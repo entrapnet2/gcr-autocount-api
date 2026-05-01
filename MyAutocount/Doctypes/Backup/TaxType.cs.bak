@@ -1,0 +1,180 @@
+using System;
+using Nancy;
+using Nancy.Extensions;
+using Newtonsoft.Json;
+using static MyAutocount.Utils;
+
+namespace MyAutocount.Doctypes.MasterData
+{
+    public class TaxType : AuthenticatedModule
+    {
+        const string DoctypeName = "TaxType";
+        const string DatabaseTable = "vTaxType";
+
+        AutoCount.Data.DBSetting dbSetting;
+        AutoCount.Authentication.UserSession userSession;
+
+        public TaxType()
+        {
+            dbSetting = Auth.dbSetting;
+            userSession = Auth.userSession;
+            Run();
+        }
+
+        private void Run()
+        {
+            Get($"/{DoctypeName}/getAll", _ =>
+            {
+                try
+                {
+                    return Sql.GetAllFromSql(userSession, DatabaseTable, this.Request);
+                }
+                catch (Exception ex)
+                {
+                    Log(ex.ToString());
+                    Response response = ex.Message;
+                    response.StatusCode = HttpStatusCode.InternalServerError;
+                    return response;
+                }
+            });
+
+            Get($"/{DoctypeName}/getSingle/{{taxTypeCode}}", args =>
+            {
+                try
+                {
+                    return Sql.GetSingleFromSql(userSession, DatabaseTable, "TaxType", args.taxTypeCode);
+                }
+                catch (Exception ex)
+                {
+                    Log(ex.ToString());
+                    Response response = ex.Message;
+                    response.StatusCode = HttpStatusCode.InternalServerError;
+                    return response;
+                }
+            });
+
+            Post($"/{DoctypeName}/add", _ =>
+            {
+                try
+                {
+                    dynamic data = Utils.ParseRequest(this.Request);
+                    return Add(data);
+                }
+                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+            });
+
+            Put($"/{DoctypeName}/edit", _ =>
+            {
+                try
+                {
+                    dynamic data = Utils.ParseRequest(this.Request);
+                    return Edit(data);
+                }
+                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+            });
+
+            Delete($"/{DoctypeName}/delete/{{taxTypeCode}}", args =>
+            {
+                try
+                {
+                    return Delete(args.taxTypeCode);
+                }
+                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+            });
+        }
+
+        private string Add(dynamic data)
+        {
+            try
+            {
+                if (Auth.Login(userSession))
+                {
+                    string taxTypeCode = data[TaxTypeConstants.TaxTypeCode];
+                    string description = data[TaxTypeConstants.Description];
+                    decimal taxRate = data[TaxTypeConstants.TaxRate] != null ? decimal.Parse(data[TaxTypeConstants.TaxRate].ToString()) : 0M;
+
+                    string sql = $"INSERT INTO TaxType (TaxType, Description, TaxRate) VALUES ('{taxTypeCode}', '{description}', {taxRate})";
+                    Sql.ExecuteSql(userSession, sql);
+
+                    Log($"{DoctypeName} added: {taxTypeCode}");
+                    return $"{DoctypeName} added: {taxTypeCode}";
+                }
+                Log($"{DoctypeName} add error: Login failed");
+                return $"{DoctypeName} add error: Login failed";
+            }
+            catch (Exception ex)
+            {
+                Log($"TaxType Add error: {ex}");
+                return $"Error: {ex.Message}";
+            }
+        }
+
+        private string Edit(dynamic data)
+        {
+            try
+            {
+                if (Auth.Login(userSession))
+                {
+                    string taxTypeCode = data[TaxTypeConstants.TaxTypeCode].ToString();
+
+                    string setClause = "";
+                    if (data[TaxTypeConstants.Description] != null) setClause += $"Description = '{data[TaxTypeConstants.Description]}'";
+                    if (data[TaxTypeConstants.TaxRate] != null)
+                    {
+                        if (setClause != "") setClause += ", ";
+                        setClause += $"TaxRate = {data[TaxTypeConstants.TaxRate]}";
+                    }
+
+                    string sql = $"UPDATE TaxType SET {setClause} WHERE TaxType = '{taxTypeCode}'";
+                    Sql.ExecuteSql(userSession, sql);
+
+                    Log($"{DoctypeName} edited: {taxTypeCode}");
+
+                    return $"{DoctypeName} edited: {taxTypeCode}";
+                }
+                Log($"{DoctypeName} edit error: Login failed");
+                return $"{DoctypeName} edit error: Login failed";
+            }
+            catch (Exception ex)
+            {
+                Log($"TaxType Edit error: {ex}");
+                return $"Error: {ex.Message}";
+            }
+        }
+
+        private string Delete(string taxTypeCode)
+        {
+            try
+            {
+                if (Auth.Login(userSession))
+                {
+                    string sql = $"DELETE FROM TaxType WHERE TaxType = '{taxTypeCode}'";
+                    Sql.ExecuteSql(userSession, sql);
+                    Log($"{DoctypeName} deleted: {taxTypeCode}");
+                    return $"{DoctypeName} deleted: {taxTypeCode}";
+                }
+                Log($"{DoctypeName} delete error: Login failed");
+                return $"{DoctypeName} delete error: Login failed";
+            }
+            catch (Exception ex)
+            {
+                Log($"TaxType Delete error: {ex}");
+                return $"Error: {ex.Message}";
+            }
+        }
+
+        private Response CreateErrorResponse(string message)
+        {
+            var response = (Response)message;
+            response.StatusCode = HttpStatusCode.InternalServerError;
+            return response;
+        }
+    }
+
+    internal static class TaxTypeConstants
+    {
+        internal static string TaxTypeCode { get; } = "taxTypeCode";
+        internal static string Description { get; } = "description";
+        internal static string TaxRate { get; } = "taxRate";
+    }
+}
