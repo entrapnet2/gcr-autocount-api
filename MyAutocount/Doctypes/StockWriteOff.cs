@@ -219,6 +219,7 @@ namespace GCR_autocount_api.Doctypes
 
                 doc.Save();
                 Utils.Log("Saved successfully");
+                PublishEvent("stock.writeoff", "created", docNo, new { docNo, description = doc.Description, docDate = doc.DocDate });
                 return $"{DoctypeName} added: {docNo}";
 
             }
@@ -256,6 +257,7 @@ namespace GCR_autocount_api.Doctypes
 
                 doc.Save();
                 Utils.Log("Edited successfully");
+                PublishEvent("stock.writeoff", "updated", docNo, new { docNo, description = doc.Description });
                 return $"{DoctypeName} edited: {docNo}";
 
             }
@@ -272,6 +274,7 @@ namespace GCR_autocount_api.Doctypes
 
                 cmd.Delete(docNo);
                 Utils.Log("Deleted successfully");
+                PublishEvent("stock.writeoff", "deleted", docNo);
                 return $"{DoctypeName} deleted: {docNo}";
             }
             return $"{DoctypeName} delete error: Login failed";

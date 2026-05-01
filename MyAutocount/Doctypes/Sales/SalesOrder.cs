@@ -182,6 +182,7 @@ namespace GCR_autocount_api.Doctypes.Sales
 
                 doc.Save();
                 Log($"{DoctypeName} added: {docNo}");
+                PublishEvent("sales.order", "created", docNo, new { docNo, debtorCode = doc.DebtorCode, docDate = doc.DocDate });
                 return $"{DoctypeName} added: {docNo}";
 
             }
@@ -219,6 +220,7 @@ namespace GCR_autocount_api.Doctypes.Sales
 
                 doc.Save();
                 Log($"{DoctypeName} edited: {docNo}");
+                PublishEvent("sales.order", "updated", docNo, new { docNo, debtorCode = doc.DebtorCode });
                 return $"{DoctypeName} edited: {docNo}";
 
             }
@@ -235,6 +237,7 @@ namespace GCR_autocount_api.Doctypes.Sales
 
                 cmd.Delete(docNo);
                 Log($"{DoctypeName} deleted: {docNo}");
+                PublishEvent("sales.order", "deleted", docNo);
                 return $"{DoctypeName} deleted: {docNo}";
             }
             Log($"{DoctypeName} delete error: Login failed");

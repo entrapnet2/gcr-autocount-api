@@ -125,6 +125,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
 
                 doc.Save();
                 Log($"{DoctypeName} added: {docNo}");
+                PublishEvent("purchase.cancelpo", "created", docNo, new { docNo, creditorCode = doc.CreditorCode, docDate = doc.DocDate });
                 return $"{DoctypeName} added: {docNo}";
             }
             Log($"{DoctypeName} add error: Login failed");
@@ -140,6 +141,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
 
                 cmd.Delete(docNo);
                 Log($"{DoctypeName} deleted: {docNo}");
+                PublishEvent("purchase.cancelpo", "deleted", docNo);
                 return $"{DoctypeName} deleted: {docNo}";
             }
             Log($"{DoctypeName} delete error: Login failed");

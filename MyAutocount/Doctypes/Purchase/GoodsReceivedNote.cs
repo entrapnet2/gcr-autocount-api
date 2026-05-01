@@ -105,6 +105,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
 
             doc.Save();
             Log($"{DoctypeName} added: {docNo}");
+            PublishEvent("purchase.grn", "created", docNo, new { docNo, creditorCode = doc.CreditorCode, docDate = doc.DocDate });
             return $"{DoctypeName} added: {docNo}";
         }
 
@@ -136,6 +137,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
 
             doc.Save();
             Log($"{DoctypeName} edited: {docNo}");
+            PublishEvent("purchase.grn", "updated", docNo, new { docNo, creditorCode = doc.CreditorCode });
             return $"{DoctypeName} edited: {docNo}";
         }
 
@@ -145,6 +147,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
             var cmd = AutoCount.Invoicing.Purchase.GoodsReceivedNote.GoodsReceivedNoteCommand.Create(userSession, userSession.DBSetting);
             cmd.Delete(docNo);
             Log($"{DoctypeName} deleted: {docNo}");
+            PublishEvent("purchase.grn", "deleted", docNo);
             return $"{DoctypeName} deleted: {docNo}";
         }
 

@@ -155,6 +155,7 @@ namespace GCR_autocount_api.Doctypes.GL
 
                 doc.Save();
                 Log($"{DoctypeName} added: {docNo}");
+                PublishEvent("gl.journalentry", "created", docNo, new { docNo, description = doc.Description, docDate = doc.DocDate });
                 return $"{DoctypeName} added: {docNo}";
             }
             Log($"{DoctypeName} add error: Login failed");
@@ -189,6 +190,7 @@ namespace GCR_autocount_api.Doctypes.GL
 
                 doc.Save();
                 Log($"{DoctypeName} edited: {docNo}");
+                PublishEvent("gl.journalentry", "updated", docNo, new { docNo, description = doc.Description });
                 return $"{DoctypeName} edited: {docNo}";
             }
             Log($"{DoctypeName} edit error: Login failed");
@@ -204,6 +206,7 @@ namespace GCR_autocount_api.Doctypes.GL
 
                 cmd.Delete(docNo);
                 Log($"{DoctypeName} deleted: {docNo}");
+                PublishEvent("gl.journalentry", "deleted", docNo);
                 return $"{DoctypeName} deleted: {docNo}";
             }
             Log($"{DoctypeName} delete error: Login failed");

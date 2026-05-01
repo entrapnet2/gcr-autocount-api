@@ -205,6 +205,7 @@ namespace GCR_autocount_api.Doctypes
 
                 cmd.SaveItemGroup(itemGroupEntity);
                 Utils.Log("Saved successfully");
+                PublishEvent("master.stockgroup", "created", itemGroup, new { itemGroup, description = itemGroupEntity.Description });
                 return $"{DoctypeName} added: {itemGroup}";
             }
             return $"{DoctypeName} add error: Login failed";
@@ -233,6 +234,7 @@ namespace GCR_autocount_api.Doctypes
 
                 cmd.SaveItemGroup(itemGroupEntity);
                 Utils.Log("Edited successfully");
+                PublishEvent("master.stockgroup", "updated", itemGroup, new { itemGroup, description = itemGroupEntity.Description });
                 return $"{DoctypeName} edited: {itemGroup}";
             }
             return $"{DoctypeName} edit error: Login failed";
@@ -247,6 +249,7 @@ namespace GCR_autocount_api.Doctypes
 
                 cmd.DeleteItemGroup(itemGroup);
                 Utils.Log("Deleted successfully");
+                PublishEvent("master.stockgroup", "deleted", itemGroup);
                 return $"{DoctypeName} deleted: {itemGroup}";
             }
             return $"{DoctypeName} delete error: Login failed";

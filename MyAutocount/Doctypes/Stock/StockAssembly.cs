@@ -106,6 +106,7 @@ namespace GCR_autocount_api.Doctypes.Stock
 
                 doc.Save();
                 Log($"{DoctypeName} added: {docNo}");
+                PublishEvent("stock.assembly", "created", docNo, new { docNo, description = doc.Description, docDate = doc.DocDate });
                 return $"{DoctypeName} added: {docNo}";
             }
             catch (Exception ex)
@@ -129,6 +130,7 @@ namespace GCR_autocount_api.Doctypes.Stock
 
                 doc.Save();
                 Log($"{DoctypeName} edited: {docNo}");
+                PublishEvent("stock.assembly", "updated", docNo, new { docNo, description = doc.Description });
                 return $"{DoctypeName} edited: {docNo}";
             }
             catch (Exception ex)
@@ -145,6 +147,7 @@ namespace GCR_autocount_api.Doctypes.Stock
             var cmd = AutoCount.Manufacturing.StockAssembly.StockAssemblyCommand.Create(userSession, userSession.DBSetting);
             cmd.Delete(docNo);
             Log($"{DoctypeName} deleted: {docNo}");
+            PublishEvent("stock.assembly", "deleted", docNo);
             return $"{DoctypeName} deleted: {docNo}";
         }
 

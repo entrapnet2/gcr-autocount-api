@@ -123,6 +123,7 @@ namespace GCR_autocount_api.Doctypes.MasterData
 
                     entity.Save();
                     Log($"{DoctypeName} added: {agentName}");
+                    PublishEvent("master.salesagent", "created", agentCode, new { agentCode, agentName });
                     return $"{DoctypeName} added: {agentName}";
                 }
                 catch (Exception ex)
@@ -155,7 +156,7 @@ entity.Description = data[SalesAgentConstants.AgentName];
 
                 entity.Save();
                 Log($"{DoctypeName} edited: {agentCode}");
-
+                PublishEvent("master.salesagent", "updated", agentCode, new { agentCode, agentName = entity.Description });
                 return $"{DoctypeName} edited: {agentCode}";
             }
             Log($"{DoctypeName} edit error: Login failed");
@@ -171,6 +172,7 @@ entity.Description = data[SalesAgentConstants.AgentName];
 
                 cmd.DeleteSalesAgent(agentCode);
                 Log($"{DoctypeName} deleted: {agentCode}");
+                PublishEvent("master.salesagent", "deleted", agentCode);
                 return $"{DoctypeName} deleted: {agentCode}";
             }
             return $"{DoctypeName} delete error: Login failed";
