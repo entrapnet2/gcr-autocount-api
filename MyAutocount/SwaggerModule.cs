@@ -267,8 +267,8 @@ namespace GCR_autocount_api
                 }),
                 ["/StockGroup/delete/{itemGroup}"] = GetPathItem("DELETE", "Delete Stock Group", "Master Data", "Delete a stock group"),
 
-                ["/StockItem/getAll"] = GetPathItem("GET", "Get all Stock Items", "Master Data", "Retrieve all stock item records"),
-                ["/StockItem/getSingle/{itemCode}"] = GetPathItem("GET", "Get Single Stock Item", "Master Data", "Retrieve a single stock item"),
+                ["/StockItem/getAll"] = GetPathItem("GET", "Get all Stock Items", "Master Data", "Retrieve all stock item records.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression (e.g., ItemGroup eq '01')\n- $orderby: Sort field (e.g., ItemCode desc)\n- $expand: Expand related entities (e.g., uoms) - includes UOMs array with UOM, Rate, Cost, Price for each item"),
+                ["/StockItem/getSingle/{itemCode}"] = GetPathItem("GET", "Get Single Stock Item", "Master Data", "Retrieve a single stock item.\n\n**OData Parameters:**\n- $expand: Expand related entities (e.g., uoms) - includes UOMs array with UOM, Rate, Cost, Price"),
                 ["/StockItem/add"] = GetPathItem("POST", "Add Stock Item", "Master Data", "Create a new stock item", true, new {
                     itemCode = "FG-001",
                     description = "Finished Good Item 1",

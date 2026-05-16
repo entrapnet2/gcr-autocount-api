@@ -58,7 +58,7 @@ namespace GCR_autocount_api.Doctypes
             {
                 try
                 {
-                    Response response = GetSingle(args.itemCode);
+                    Response response = GetSingle(args.itemCode, this.Request);
                     return response;
                 }
                 catch (Exception ex)
@@ -156,25 +156,110 @@ namespace GCR_autocount_api.Doctypes
 
         private string GetAll(Request request = null)
         {
-            return Sql.GetAllFromSql(userSession, DatabaseTable, request);
-        }
-        private string GetSingle(string itemCode)
-        {
-
             string dbName = userSession.DBSetting.DBName;
 
-            string query = $"SELECT tableItem.*, tableItemUOM.Price, tableItemUOM.Cost " +
-                $"FROM [{dbName}].[dbo].[{UOMTable}] tableItemUOM " +
-                $"INNER JOIN[{dbName}].[dbo].[{DatabaseTable}] tableItem " +
-                $"ON tableItemUOM.ItemCode = tableItem.ItemCode " +
-                $"WHERE tableItem.ItemCode = @itemCode" ;
+            bool expandUoms = request != null && request.Query.ContainsKey("$expand") &&
+                              request.Query["$expand"].ToString().ToLower().Contains("uoms");
 
-            object[] paramsList = new object[]
+            string baseQuery = $"SELECT * FROM [{dbName}].[dbo].[{DatabaseTable}]";
+
+            if (ODataHelper.HasODataParams(request))
             {
-                new SqlParameter("itemCode", itemCode)
-            };
+                baseQuery = ODataHelper.BuildQuery(baseQuery, request, DatabaseTable, dbName);
+            }
+            else
+            {
+                baseQuery = $"SELECT TOP(5) * FROM [{dbName}].[dbo].[{DatabaseTable}]";
+            }
 
-            return Sql.RunSqlQuery(userSession, query, paramsList);
+            DataTable itemTable = userSession.DBSetting.GetDataTable(baseQuery, false);
+
+            if (!expandUoms)
+            {
+                return Utils.DataTableToJsonString(itemTable);
+            }
+
+            var resultList = new List<Dictionary<string, object>>();
+            foreach (DataRow itemRow in itemTable.Rows)
+            {
+                var itemDict = new Dictionary<string, object>();
+                foreach (DataColumn col in itemTable.Columns)
+                {
+                    itemDict[col.ColumnName] = itemRow[col];
+                }
+
+                string itemCode = itemRow["ItemCode"].ToString();
+                string uomQuery = $"SELECT UOM, Rate, Cost, Price FROM [{dbName}].[dbo].[{UOMTable}] " +
+                    $"WHERE ItemCode = @itemCode ORDER BY Rate";
+                DataTable uomTable = userSession.DBSetting.GetDataTable(uomQuery, false, new object[] {
+                    new SqlParameter("itemCode", itemCode)
+                });
+
+                var uomsList = new List<Dictionary<string, object>>();
+                foreach (DataRow uomRow in uomTable.Rows)
+                {
+                    var uomDict = new Dictionary<string, object>();
+                    foreach (DataColumn col in uomTable.Columns)
+                    {
+                        uomDict[col.ColumnName] = uomRow[col];
+                    }
+                    uomsList.Add(uomDict);
+                }
+                itemDict["UOMs"] = uomsList;
+
+                resultList.Add(itemDict);
+            }
+
+            return JsonConvert.SerializeObject(resultList, Formatting.Indented);
+        }
+
+        private string GetSingle(string itemCode, Request request)
+        {
+            string dbName = userSession.DBSetting.DBName;
+
+            string itemQuery = $"SELECT * FROM [{dbName}].[dbo].[{DatabaseTable}] WHERE ItemCode = @itemCode";
+            DataTable itemTable = userSession.DBSetting.GetDataTable(itemQuery, false, new object[] {
+                new SqlParameter("itemCode", itemCode)
+            });
+
+            if (itemTable.Rows.Count == 0)
+            {
+                return "[]";
+            }
+
+            var result = new Dictionary<string, object>();
+            var itemRow = itemTable.Rows[0];
+
+            foreach (DataColumn col in itemTable.Columns)
+            {
+                result[col.ColumnName] = itemRow[col];
+            }
+
+            bool expandUoms = request.Query.ContainsKey("$expand") &&
+                              request.Query["$expand"].ToString().ToLower().Contains("uoms");
+
+            if (expandUoms)
+            {
+                string uomQuery = $"SELECT UOM, Rate, Cost, Price FROM [{dbName}].[dbo].[{UOMTable}] " +
+                    $"WHERE ItemCode = @itemCode ORDER BY Rate";
+                DataTable uomTable = userSession.DBSetting.GetDataTable(uomQuery, false, new object[] {
+                    new SqlParameter("itemCode", itemCode)
+                });
+
+                var uomsList = new List<Dictionary<string, object>>();
+                foreach (DataRow row in uomTable.Rows)
+                {
+                    var uomDict = new Dictionary<string, object>();
+                    foreach (DataColumn col in uomTable.Columns)
+                    {
+                        uomDict[col.ColumnName] = row[col];
+                    }
+                    uomsList.Add(uomDict);
+                }
+                result["UOMs"] = uomsList;
+            }
+
+            return JsonConvert.SerializeObject(result, Formatting.Indented);
         }
 
         private string Add(string itemCode, string description, string uom, string unitCost, string price, 
