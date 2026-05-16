@@ -180,7 +180,7 @@ namespace GCR_autocount_api.Doctypes.Stock
 
                 doc.Save();
                 Log($"{DoctypeName} added: {docNo}");
-                PublishEvent("stock.transfer", "created", docNo, new { docNo, fromLocation = doc.FromLocation, toLocation = doc.ToLocation, docDate = doc.DocDate });
+
                 return $"{DoctypeName} added: {docNo}";
             }
             Log($"{DoctypeName} add error: Login failed");
@@ -217,7 +217,7 @@ namespace GCR_autocount_api.Doctypes.Stock
 
                 doc.Save();
                 Log($"{DoctypeName} edited: {docNo}");
-                PublishEvent("stock.transfer", "updated", docNo, new { docNo, fromLocation = doc.FromLocation, toLocation = doc.ToLocation });
+
                 return $"{DoctypeName} edited: {docNo}";
             }
             Log($"{DoctypeName} edit error: Login failed");
@@ -233,7 +233,7 @@ namespace GCR_autocount_api.Doctypes.Stock
 
                 cmd.Delete(docNo);
                 Log($"{DoctypeName} deleted: {docNo}");
-                PublishEvent("stock.transfer", "deleted", docNo);
+
                 return $"{DoctypeName} deleted: {docNo}";
             }
             return $"{DoctypeName} delete error: Login failed";

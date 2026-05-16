@@ -292,6 +292,34 @@ namespace GCR_autocount_api
                     dutyRate = "0"
                 }),
                 ["/StockItem/delete/{itemCode}"] = GetPathItem("DELETE", "Delete Stock Item", "Master Data", "Delete a stock item"),
+
+                ["/StockBalance/getAll"] = GetPathItem("GET", "Get all Stock Balances", "Master Data", "Retrieve all stock balance records from ItemLocation table. Returns items with non-zero balance.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression (e.g., BalQty gt 100)\n- $orderby: Sort field (e.g., ItemCode desc)"),
+                ["/StockBalance/getByItem/{itemCode}"] = GetPathItem("GET", "Get Stock Balance by Item", "Master Data", "Retrieve stock balance for a specific item code.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field"),
+                ["/StockBalance/getOnDate"] = GetPathItemWithQueryParams("GET", "Get Stock Balance on Date", "Master Data", "Retrieve stock balance as of a specific date using StockBalanceHelper.\n\n**Query Parameters:**\n- onDate: Date in yyyy-MM-dd format (default: today)\n- locationFrom: Location code range from\n- locationTo: Location code range to\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field", "onDate,locationFrom,locationTo"),
+                ["/StockBalance/getByLocation"] = GetPathItemWithQueryParams("GET", "Get Stock Balance by Location", "Master Data", "Retrieve stock balance filtered by location range.\n\n**Query Parameters:**\n- locationFrom: Location code range from\n- locationTo: Location code range to\n- onDate: Date in yyyy-MM-dd format (default: today)\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field", "locationFrom,locationTo,onDate"),
+                ["/StockBalance/getSerialNumbers/{itemCode}"] = GetPathItem("GET", "Get Serial Numbers by Item", "Master Data", "Retrieve serial numbers for a specific item.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field"),
+
+                ["/StockLocation/getAll"] = GetPathItem("GET", "Get all Stock Locations", "Master Data", "Retrieve all stock location records.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field"),
+                ["/StockLocation/getSingle/{locationCode}"] = GetPathItem("GET", "Get Single Stock Location", "Master Data", "Retrieve a single stock location"),
+                ["/StockLocation/add"] = GetPathItem("POST", "Add Stock Location", "Master Data", "Create a new stock location", true, new {
+                    locationCode = "WH-01",
+                    description = "Warehouse 1",
+                    description2 = "",
+                    address1 = "123 Industrial Road",
+                    address2 = "Kawasan Perindustrian",
+                    address3 = "Penang",
+                    address4 = "12000",
+                    phone = "04-1234567",
+                    fax = "04-1234568",
+                    email = "warehouse@example.com",
+                    contact = "Mr. Tan"
+                }),
+                ["/StockLocation/edit"] = GetPathItem("PUT", "Edit Stock Location", "Master Data", "Update an existing stock location", true, new {
+                    locationCode = "WH-01",
+                    description = "Warehouse 1 Updated",
+                    phone = "04-7654321"
+                }),
+                ["/StockLocation/delete/{locationCode}"] = GetPathItem("DELETE", "Delete Stock Location", "Master Data", "Delete a stock location"),
                 #endregion
 
                 #region Sales
@@ -557,7 +585,6 @@ namespace GCR_autocount_api
                 }
             };
 
-            // Add OData parameters for GET requests
             if (method.ToLower() == "get")
             {
                 string selectDescription = GetSelectDescription(tag);
@@ -566,7 +593,7 @@ namespace GCR_autocount_api
                     new Dictionary<string, object> { ["name"] = "$select", ["in"] = "query", ["description"] = selectDescription, ["required"] = false, ["schema"] = new { type = "string" } },
                     new Dictionary<string, object> { ["name"] = "$filter", ["in"] = "query", ["description"] = "Filter results (e.g., DocNo eq 'SO-0001')", ["required"] = false, ["schema"] = new { type = "string" } },
                     new Dictionary<string, object> { ["name"] = "$orderby", ["in"] = "query", ["description"] = "Order by field (e.g., DocDate desc)", ["required"] = false, ["schema"] = new { type = "string" } },
-                    new Dictionary<string, object> { ["name"] = "$top", ["in"] = "query", ["description"] = "Max records (default: 100, max: 1000)", ["required"] = false, ["schema"] = new { type = "integer" } }
+                    new Dictionary<string, object> { ["name"] = "$top", ["in"] = "query", ["description"] = "Max records (default: 5, max: 1000)", ["required"] = false, ["schema"] = new { type = "integer" } }
                 };
             }
 
@@ -596,6 +623,55 @@ namespace GCR_autocount_api
             return pathItem;
         }
 
+        private object GetPathItemWithQueryParams(string method, string summary, string tag, string description, string queryParamsList)
+        {
+            var operations = new Dictionary<string, object>
+            {
+                ["summary"] = summary,
+                ["tags"] = new[] { tag },
+                ["description"] = description + "\n\n**Authentication required**: Include 'Authorization: Bearer <token>' header or '?token=<token>' query parameter.",
+                ["security"] = new[] { new { bearerAuth = new string[] { } } },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object> { ["description"] = "Successful response" },
+                    ["400"] = new Dictionary<string, object> { ["description"] = "Bad request" },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized - Invalid or missing token" },
+                    ["500"] = new Dictionary<string, object> { ["description"] = "Server error" }
+                }
+            };
+
+            if (method.ToLower() == "get")
+            {
+                var paramList = new List<Dictionary<string, object>>();
+
+                if (!string.IsNullOrEmpty(queryParamsList))
+                {
+                    foreach (var param in queryParamsList.Split(','))
+                    {
+                        paramList.Add(new Dictionary<string, object>
+                        {
+                            ["name"] = param.Trim(),
+                            ["in"] = "query",
+                            ["description"] = $"Query parameter: {param.Trim()}",
+                            ["required"] = false,
+                            ["schema"] = new { type = "string" }
+                        });
+                    }
+                }
+
+                paramList.Add(new Dictionary<string, object> { ["name"] = "$filter", ["in"] = "query", ["description"] = "Filter results (e.g., BalQty gt 100)", ["required"] = false, ["schema"] = new { type = "string" } });
+                paramList.Add(new Dictionary<string, object> { ["name"] = "$orderby", ["in"] = "query", ["description"] = "Order by field (e.g., ItemCode desc)", ["required"] = false, ["schema"] = new { type = "string" } });
+                paramList.Add(new Dictionary<string, object> { ["name"] = "$top", ["in"] = "query", ["description"] = "Max records (default: 5, max: 1000)", ["required"] = false, ["schema"] = new { type = "integer" } });
+
+                operations["parameters"] = paramList.ToArray();
+            }
+
+            var pathItem = new Dictionary<string, object>();
+            var methodLower = method.ToLower();
+            pathItem[methodLower] = operations;
+            return pathItem;
+        }
+
         private string GetSelectDescription(string tag)
         {
             var fields = new Dictionary<string, string[]>
@@ -613,6 +689,7 @@ namespace GCR_autocount_api
                 ["Creditor"] = new[] { "CreditorCode", "CompanyName", "Address1", "Address2", "Phone", "Fax", "Email" },
                 ["GoodsReceivedNote"] = new[] { "DocNo", "DocDate", "CreditorCode", "Total", "Status" },
                 ["StockItem"] = new[] { "ItemCode", "Description", "ItemGroup", "UOM", "BalQty", "AvgCost" },
+                ["StockBalance"] = new[] { "ItemCode", "Location", "BalQty", "ReservedQty", "OnOrderQty", "AllocatedQty", "AvgCost", "LastCost" },
                 ["StockGroup"] = new[] { "GroupCode", "Description" },
                 ["StockAdjustment"] = new[] { "DocNo", "DocDate", "Total", "Status" },
                 ["StockWriteOff"] = new[] { "DocNo", "DocDate", "Total", "Status" },

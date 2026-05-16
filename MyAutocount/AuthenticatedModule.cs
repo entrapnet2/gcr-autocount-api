@@ -2,22 +2,11 @@ using System;
 using System.Linq;
 using Nancy;
 using static GCR_autocount_api.Utils;
-using GCR_autocount_api.NATS;
 
 namespace GCR_autocount_api
 {
     public abstract class AuthenticatedModule : NancyModule
     {
-        protected NatsService Nats => MyService.Nats;
-        
-        protected void PublishEvent(string entity, string action, string docNo, object data = null)
-        {
-            if (Nats != null && Nats.IsConnected)
-            {
-                Nats.PublishEvent(entity, action, docNo, data);
-            }
-        }
-        
         protected AuthenticatedModule()
         {
             Before.AddItemToEndOfPipeline(ValidateJwtToken);
@@ -32,7 +21,6 @@ namespace GCR_autocount_api
         {
             string path = context.Request.Path.ToLower();
 
-            // Skip JWT validation for login and swagger endpoints
             if (path == "/login" || path.StartsWith("/swagger"))
             {
                 return null;
@@ -55,19 +43,17 @@ namespace GCR_autocount_api
             string username = JwtHelper.GetUsernameFromToken(token);
             Log($"Authenticated request from: {username}");
 
-            return null; // Continue with the request
+            return null;
         }
 
         private string GetTokenFromRequest(Request request)
         {
-            // Debug: Log all headers
             Log("Request path: " + request.Path);
             foreach (var header in request.Headers)
             {
                 Log("Header: " + header.Key + " = " + string.Join(", ", header.Value));
             }
 
-            // Check Authorization header
             foreach (var header in request.Headers)
             {
                 if (header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
@@ -81,7 +67,6 @@ namespace GCR_autocount_api
                 }
             }
 
-            // Check query parameter
             if (request.Query.ContainsKey("token"))
             {
                 Log("Found token in query: " + request.Query["token"]);

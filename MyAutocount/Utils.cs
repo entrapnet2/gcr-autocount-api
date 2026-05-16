@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,9 @@ namespace GCR_autocount_api
 {
     class Utils
     {
+        private static string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "app.log");
+        private static object logLock = new object();
+
         public static void print(object str)
         {
             Console.WriteLine(str.ToString());
@@ -26,7 +30,28 @@ namespace GCR_autocount_api
 
         public static void Log(string str)
         {
-            print($"{PrintTime()} : {str}");
+            string logMessage = $"{PrintTime()} : {str}";
+            print(logMessage);
+            WriteToFile(logMessage);
+        }
+
+        private static void WriteToFile(string message)
+        {
+            try
+            {
+                lock (logLock)
+                {
+                    string logDir = Path.GetDirectoryName(logFilePath);
+                    if (!Directory.Exists(logDir))
+                    {
+                        Directory.CreateDirectory(logDir);
+                    }
+                    File.AppendAllText(logFilePath, message + Environment.NewLine);
+                }
+            }
+            catch
+            {
+            }
         }
 
         public static void Output(string str)
