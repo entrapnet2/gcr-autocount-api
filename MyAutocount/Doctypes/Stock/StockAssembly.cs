@@ -72,6 +72,12 @@ namespace GCR_autocount_api.Doctypes.Stock
                 try { return Delete(args.docNo); }
                 catch (Exception ex) { Log(ex.ToString()); return ex.Message; }
             });
+
+            Get($"/{DoctypeName}/count", _ =>
+            {
+                try { return Sql.GetCountFromSql(userSession, DatabaseTable, this.Request); }
+                catch (Exception ex) { Log(ex.ToString()); return ex.Message; }
+            });
         }
 
         private string GetAll() => Sql.GetAllFromSql(userSession, DatabaseTable);

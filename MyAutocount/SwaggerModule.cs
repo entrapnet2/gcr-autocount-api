@@ -157,6 +157,7 @@ namespace GCR_autocount_api
 
                 #region Master Data
                 ["/SalesAgent/getAll"] = GetPathItem("GET", "Get all Sales Agents", "Master Data", "Retrieve all sales agent records"),
+                ["/SalesAgent/count"] = GetPathItem("GET", "Count Sales Agents", "Master Data", "Get total number of sales agent records. Supports optional $filter for filtered counts"),
                 ["/SalesAgent/getSingle/{agentCode}"] = GetPathItem("GET", "Get Single Sales Agent", "Master Data", "Retrieve a single sales agent"),
                 ["/SalesAgent/add"] = GetPathItem("POST", "Add Sales Agent", "Master Data", "Create a new sales agent", true, new {
                     agentCode = "SA001",
@@ -169,6 +170,7 @@ namespace GCR_autocount_api
                 ["/SalesAgent/delete/{agentCode}"] = GetPathItem("DELETE", "Delete Sales Agent", "Master Data", "Delete a sales agent"),
 
                 ["/Debtor/getAll"] = GetPathItem("GET", "Get all Debtors", "Master Data", "Retrieve all debtor records"),
+                ["/Debtor/count"] = GetPathItem("GET", "Count Debtors", "Master Data", "Get total number of debtor records. Supports optional $filter for filtered counts"),
                 ["/Debtor/getSingle/{debtorCode}"] = GetPathItem("GET", "Get Single Debtor", "Master Data", "Retrieve a single debtor"),
                 ["/Debtor/add"] = GetPathItem("POST", "Add Debtor", "Master Data", "Create a new debtor\n\n**Note**: debtorCode must follow existing format (e.g., 2200-T001). Parent GL account 2200-0000 must exist.", true, new {
                     debtorCode = "2200-T001",
@@ -204,6 +206,7 @@ namespace GCR_autocount_api
                 ["/Debtor/delete/{debtorCode}"] = GetPathItem("DELETE", "Delete Debtor", "Master Data", "Delete a debtor"),
 
                 ["/Creditor/getAll"] = GetPathItem("GET", "Get all Creditors", "Master Data", "Retrieve all creditor records"),
+                ["/Creditor/count"] = GetPathItem("GET", "Count Creditors", "Master Data", "Get total number of creditor records. Supports optional $filter for filtered counts"),
                 ["/Creditor/getSingle/{creditorCode}"] = GetPathItem("GET", "Get Single Creditor", "Master Data", "Retrieve a single creditor"),
                 ["/Creditor/add"] = GetPathItem("POST", "Add Creditor", "Master Data", "Create a new creditor\n\n**Note**: creditorCode must follow existing format (e.g., 3100-S001). Parent GL account 3100-0000 must exist.", true, new {
                     creditorCode = "3100-S001",
@@ -233,6 +236,7 @@ namespace GCR_autocount_api
                 ["/Creditor/delete/{creditorCode}"] = GetPathItem("DELETE", "Delete Creditor", "Master Data", "Delete a creditor"),
 
                 ["/StockGroup/getAll"] = GetPathItem("GET", "Get all Stock Groups", "Master Data", "Retrieve all stock group records"),
+                ["/StockGroup/count"] = GetPathItem("GET", "Count Stock Groups", "Master Data", "Get total number of stock group records. Supports optional $filter for filtered counts"),
                 ["/StockGroup/getSingle/{itemGroup}"] = GetPathItem("GET", "Get Single Stock Group", "Master Data", "Retrieve a single stock group"),
                 ["/StockGroup/getCodes"] = GetPathItem("GET", "Get GL Codes", "Master Data", "Get general account codes for stock group"),
                 ["/StockGroup/add"] = GetPathItem("POST", "Add Stock Group", "Master Data", "Create a new stock group\n\n**Note**: Use JSON Content-Type for nested stockCodes object. Form data supported for simple fields.", true, new {
@@ -268,6 +272,7 @@ namespace GCR_autocount_api
                 ["/StockGroup/delete/{itemGroup}"] = GetPathItem("DELETE", "Delete Stock Group", "Master Data", "Delete a stock group"),
 
                 ["/StockItem/getAll"] = GetPathItem("GET", "Get all Stock Items", "Master Data", "Retrieve all stock item records.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression (e.g., ItemGroup eq '01')\n- $orderby: Sort field (e.g., ItemCode desc)\n- $expand: Expand related entities (e.g., uoms) - includes UOMs array with UOM, Rate, Cost, Price for each item"),
+                ["/StockItem/count"] = GetPathItem("GET", "Count Stock Items", "Master Data", "Get total number of stock item records. Supports optional $filter for filtered counts (e.g., $filter=ItemGroup eq '01')"),
                 ["/StockItem/getSingle/{itemCode}"] = GetPathItem("GET", "Get Single Stock Item", "Master Data", "Retrieve a single stock item.\n\n**OData Parameters:**\n- $expand: Expand related entities (e.g., uoms) - includes UOMs array with UOM, Rate, Cost, Price"),
                 ["/StockItem/add"] = GetPathItem("POST", "Add Stock Item", "Master Data", "Create a new stock item", true, new {
                     itemCode = "FG-001",
@@ -294,12 +299,14 @@ namespace GCR_autocount_api
                 ["/StockItem/delete/{itemCode}"] = GetPathItem("DELETE", "Delete Stock Item", "Master Data", "Delete a stock item"),
 
                 ["/StockBalance/getAll"] = GetPathItem("GET", "Get all Stock Balances", "Master Data", "Retrieve all stock balance records from ItemLocation table. Returns items with non-zero balance.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression (e.g., BalQty gt 100)\n- $orderby: Sort field (e.g., ItemCode desc)"),
+                ["/StockBalance/count"] = GetPathItem("GET", "Count Stock Balances", "Master Data", "Get total number of stock balance records. Supports optional $filter for filtered counts"),
                 ["/StockBalance/getByItem/{itemCode}"] = GetPathItem("GET", "Get Stock Balance by Item", "Master Data", "Retrieve stock balance for a specific item code.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field"),
                 ["/StockBalance/getOnDate"] = GetPathItemWithQueryParams("GET", "Get Stock Balance on Date", "Master Data", "Retrieve stock balance as of a specific date using StockBalanceHelper.\n\n**Query Parameters:**\n- onDate: Date in yyyy-MM-dd format (default: today)\n- locationFrom: Location code range from\n- locationTo: Location code range to\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field", "onDate,locationFrom,locationTo"),
                 ["/StockBalance/getByLocation"] = GetPathItemWithQueryParams("GET", "Get Stock Balance by Location", "Master Data", "Retrieve stock balance filtered by location range.\n\n**Query Parameters:**\n- locationFrom: Location code range from\n- locationTo: Location code range to\n- onDate: Date in yyyy-MM-dd format (default: today)\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field", "locationFrom,locationTo,onDate"),
                 ["/StockBalance/getSerialNumbers/{itemCode}"] = GetPathItem("GET", "Get Serial Numbers by Item", "Master Data", "Retrieve serial numbers for a specific item.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field"),
 
                 ["/StockLocation/getAll"] = GetPathItem("GET", "Get all Stock Locations", "Master Data", "Retrieve all stock location records.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression\n- $orderby: Sort field"),
+                ["/StockLocation/count"] = GetPathItem("GET", "Count Stock Locations", "Master Data", "Get total number of stock location records. Supports optional $filter for filtered counts"),
                 ["/StockLocation/getSingle/{locationCode}"] = GetPathItem("GET", "Get Single Stock Location", "Master Data", "Retrieve a single stock location"),
                 ["/StockLocation/add"] = GetPathItem("POST", "Add Stock Location", "Master Data", "Create a new stock location", true, new {
                     locationCode = "WH-01",
@@ -324,6 +331,7 @@ namespace GCR_autocount_api
 
                 #region Sales
                 ["/SalesInvoice/getAll"] = GetPathItem("GET", "Get all Sales Invoices", "Sales", "Retrieve all sales invoice records"),
+                ["/SalesInvoice/count"] = GetPathItem("GET", "Count Sales Invoices", "Sales", "Get total number of sales invoice records. Supports optional $filter for filtered counts"),
                 ["/SalesInvoice/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Sales Invoice", "Sales", "Retrieve a single sales invoice"),
                 ["/SalesInvoice/getDetail/{docNo}"] = GetPathItem("GET", "Get Sales Invoice Details", "Sales", "Retrieve invoice with details"),
                 ["/SalesInvoice/add"] = GetPathItem("POST", "Add Sales Invoice", "Sales", "Create a new sales invoice\n\n**ON HOLD**: SDK/DB schema mismatch - 'WithholdingTaxVersion' column required by SDK but not in database. Awaiting resolution.", true, new {
@@ -343,7 +351,44 @@ namespace GCR_autocount_api
                 }),
                 ["/SalesInvoice/delete/{docNo}"] = GetPathItem("DELETE", "Delete Sales Invoice", "Sales", "Delete a sales invoice"),
 
+                ["/DeliveryOrder/getAll"] = GetPathItem("GET", "Get all Delivery Orders", "Sales", "Retrieve all delivery order records"),
+                ["/DeliveryOrder/count"] = GetPathItem("GET", "Count Delivery Orders", "Sales", "Get total number of delivery order records. Supports optional $filter for filtered counts"),
+                ["/DeliveryOrder/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Delivery Order", "Sales", "Retrieve a single delivery order"),
+                ["/DeliveryOrder/getDetail/{docNo}"] = GetPathItem("GET", "Get Delivery Order Details", "Sales", "Retrieve delivery order with details"),
+                ["/DeliveryOrder/add"] = GetPathItem("POST", "Add Delivery Order", "Sales", "Create a new delivery order", true, new {
+                    docNo = "DO-00001",
+                    debtorCode = "2200-T001",
+                    date = "2024-01-15",
+                    shipInfo = "Deliver to customer address",
+                    detailList = new[] {
+                        new {
+                            itemCode = "FG00001",
+                            uom = "UNIT",
+                            quantity = 10,
+                            unitPrice = 25.00,
+                            discount = ""
+                        }
+                    }
+                }),
+                ["/DeliveryOrder/edit"] = GetPathItem("PUT", "Edit Delivery Order", "Sales", "Update an existing delivery order", true, new {
+                    docNo = "DO-00001",
+                    debtorCode = "2200-T001",
+                    date = "2024-01-15",
+                    shipInfo = "Deliver to customer address",
+                    detailList = new[] {
+                        new {
+                            itemCode = "FG00001",
+                            uom = "UNIT",
+                            quantity = 10,
+                            unitPrice = 25.00,
+                            discount = ""
+                        }
+                    }
+                }),
+                ["/DeliveryOrder/delete/{docNo}"] = GetPathItem("DELETE", "Delete Delivery Order", "Sales", "Delete a delivery order"),
+
                 ["/CashSale/getAll"] = GetPathItem("GET", "Get all Cash Sales", "Sales", "Retrieve all cash sale records"),
+                ["/CashSale/count"] = GetPathItem("GET", "Count Cash Sales", "Sales", "Get total number of cash sale records. Supports optional $filter for filtered counts"),
                 ["/CashSale/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Cash Sale", "Sales", "Retrieve a single cash sale"),
                 ["/CashSale/getDetail/{docNo}"] = GetPathItem("GET", "Get Cash Sale Details", "Sales", "Retrieve a cash sale with details"),
                 ["/CashSale/add"] = GetPathItem("POST", "Add Cash Sale", "Sales", "Create a new cash sale", true, new {
@@ -385,6 +430,7 @@ namespace GCR_autocount_api
 
                 #region Purchase
                 ["/PurchaseOrder/getAll"] = GetPathItem("GET", "Get all Purchase Orders", "Purchase", "Retrieve all purchase order records"),
+                ["/PurchaseOrder/count"] = GetPathItem("GET", "Count Purchase Orders", "Purchase", "Get total number of purchase order records. Supports optional $filter for filtered counts"),
                 ["/PurchaseOrder/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Purchase Order", "Purchase", "Retrieve a single purchase order"),
                 ["/PurchaseOrder/add"] = GetPathItem("POST", "Add Purchase Order", "Purchase", "Create a new purchase order", true, new {
                     docNo = "PO-00001",
@@ -407,6 +453,7 @@ namespace GCR_autocount_api
                 ["/PurchaseOrder/delete/{docNo}"] = GetPathItem("DELETE", "Delete Purchase Order", "Purchase", "Delete a purchase order"),
 
                 ["/GoodsReceivedNote/getAll"] = GetPathItem("GET", "Get all Goods Received Notes", "Purchase", "Retrieve all GRN records"),
+                ["/GoodsReceivedNote/count"] = GetPathItem("GET", "Count Goods Received Notes", "Purchase", "Get total number of GRN records. Supports optional $filter for filtered counts"),
                 ["/GoodsReceivedNote/getSingle/{docNo}"] = GetPathItem("GET", "Get Single GRN", "Purchase", "Retrieve a single GRN"),
                 ["/GoodsReceivedNote/add"] = GetPathItem("POST", "Add Goods Received Note", "Purchase", "Create a new GRN", true, new {
                     docNo = "GRN-00001",
@@ -431,6 +478,7 @@ namespace GCR_autocount_api
 
                 #region Stock Transactions
                 ["/StockAdjustment/getAll"] = GetPathItem("GET", "Get all Stock Adjustments", "Stock Transactions", "Retrieve all stock adjustment records"),
+                ["/StockAdjustment/count"] = GetPathItem("GET", "Count Stock Adjustments", "Stock Transactions", "Get total number of stock adjustment records. Supports optional $filter for filtered counts"),
                 ["/StockAdjustment/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Stock Adjustment", "Stock Transactions", "Retrieve a single stock adjustment"),
                 ["/StockAdjustment/add"] = GetPathItem("POST", "Add Stock Adjustment", "Stock Transactions", "Create a new stock adjustment", true, new {
                     docNo = "SA-00001",
@@ -451,6 +499,7 @@ namespace GCR_autocount_api
                 ["/StockAdjustment/delete/{docNo}"] = GetPathItem("DELETE", "Delete Stock Adjustment", "Stock Transactions", "Delete a stock adjustment"),
 
                 ["/StockTransfer/getAll"] = GetPathItem("GET", "Get all Stock Transfers", "Stock Transactions", "Retrieve all stock transfer records"),
+                ["/StockTransfer/count"] = GetPathItem("GET", "Count Stock Transfers", "Stock Transactions", "Get total number of stock transfer records. Supports optional $filter for filtered counts"),
                 ["/StockTransfer/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Stock Transfer", "Stock Transactions", "Retrieve a single stock transfer"),
                 ["/StockTransfer/getDetail/{docNo}"] = GetPathItem("GET", "Get Stock Transfer Details", "Stock Transactions", "Retrieve transfer with details"),
                 ["/StockTransfer/add"] = GetPathItem("POST", "Add Stock Transfer", "Stock Transactions", "Create a new stock transfer", true, new {
@@ -476,6 +525,7 @@ namespace GCR_autocount_api
                 ["/StockTransfer/delete/{docNo}"] = GetPathItem("DELETE", "Delete Stock Transfer", "Stock Transactions", "Delete a stock transfer"),
 
                 ["/StockAssembly/getAll"] = GetPathItem("GET", "Get all Stock Assemblies", "Stock Transactions", "Retrieve all stock assembly records"),
+                ["/StockAssembly/count"] = GetPathItem("GET", "Count Stock Assemblies", "Stock Transactions", "Get total number of stock assembly records. Supports optional $filter for filtered counts"),
                 ["/StockAssembly/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Stock Assembly", "Stock Transactions", "Retrieve a single stock assembly"),
                 ["/StockAssembly/getDetail/{docNo}"] = GetPathItem("GET", "Get Stock Assembly Details", "Stock Transactions", "Retrieve assembly with details"),
                 ["/StockAssembly/add"] = GetPathItem("POST", "Add Stock Assembly", "Stock Transactions", "Create a new stock assembly", true, new {
@@ -501,6 +551,7 @@ namespace GCR_autocount_api
                 ["/StockAssembly/delete/{docNo}"] = GetPathItem("DELETE", "Delete Stock Assembly", "Stock Transactions", "Delete a stock assembly"),
 
                 ["/StockWriteOff/getAll"] = GetPathItem("GET", "Get all Stock Write Off", "Stock Transactions", "Retrieve all stock write off records"),
+                ["/StockWriteOff/count"] = GetPathItem("GET", "Count Stock Write Off", "Stock Transactions", "Get total number of stock write off records. Supports optional $filter for filtered counts"),
                 ["/StockWriteOff/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Stock Write Off", "Stock Transactions", "Retrieve a single stock write off"),
                 ["/StockWriteOff/add"] = GetPathItem("POST", "Add Stock Write Off", "Stock Transactions", "Create a new stock write off", true, new {
                     docNo = "SW-00001",
@@ -521,6 +572,7 @@ namespace GCR_autocount_api
                 ["/StockWriteOff/delete/{docNo}"] = GetPathItem("DELETE", "Delete Stock Write Off", "Stock Transactions", "Delete a stock write off"),
 
                 ["/StockReceive/getAll"] = GetPathItem("GET", "Get all Stock Receive", "Stock Transactions", "Retrieve all stock receive records"),
+                ["/StockReceive/count"] = GetPathItem("GET", "Count Stock Receive", "Stock Transactions", "Get total number of stock receive records. Supports optional $filter for filtered counts"),
                 ["/StockReceive/add"] = GetPathItem("POST", "Add Stock Receive", "Stock Transactions", "Create a new stock receive", true, new {
                     docNo = "SR-00001",
                     docDate = "2024-01-15",
@@ -531,6 +583,7 @@ namespace GCR_autocount_api
                 }),
 
                 ["/StockIssue/getAll"] = GetPathItem("GET", "Get all Stock Issue", "Stock Transactions", "Retrieve all stock issue records"),
+                ["/StockIssue/count"] = GetPathItem("GET", "Count Stock Issue", "Stock Transactions", "Get total number of stock issue records. Supports optional $filter for filtered counts"),
                 ["/StockIssue/add"] = GetPathItem("POST", "Add Stock Issue", "Stock Transactions", "Create a new stock issue", true, new {
                     docNo = "SI-00001",
                     docDate = "2024-01-15",
@@ -541,6 +594,7 @@ namespace GCR_autocount_api
                 }),
 
                 ["/StockUpdateCost/getAll"] = GetPathItem("GET", "Get all Stock Update Cost", "Stock Transactions", "Retrieve all stock update cost records"),
+                ["/StockUpdateCost/count"] = GetPathItem("GET", "Count Stock Update Cost", "Stock Transactions", "Get total number of stock update cost records. Supports optional $filter for filtered counts"),
                 ["/StockUpdateCost/add"] = GetPathItem("POST", "Add Stock Update Cost", "Stock Transactions", "Create a new stock update cost", true, new {
                     docNo = "SU-00001",
                     docDate = "2024-01-15",
@@ -551,6 +605,7 @@ namespace GCR_autocount_api
                 }),
 
                 ["/StockTake/getAll"] = GetPathItem("GET", "Get all Stock Take", "Stock Transactions", "Retrieve all stock take records"),
+                ["/StockTake/count"] = GetPathItem("GET", "Count Stock Take", "Stock Transactions", "Get total number of stock take records. Supports optional $filter for filtered counts"),
                 ["/StockTake/add"] = GetPathItem("POST", "Add Stock Take", "Stock Transactions", "Create a new stock take", true, new {
                     docNo = "ST-00001",
                     docDate = "2024-01-15",
@@ -593,7 +648,8 @@ namespace GCR_autocount_api
                     new Dictionary<string, object> { ["name"] = "$select", ["in"] = "query", ["description"] = selectDescription, ["required"] = false, ["schema"] = new { type = "string" } },
                     new Dictionary<string, object> { ["name"] = "$filter", ["in"] = "query", ["description"] = "Filter results (e.g., DocNo eq 'SO-0001')", ["required"] = false, ["schema"] = new { type = "string" } },
                     new Dictionary<string, object> { ["name"] = "$orderby", ["in"] = "query", ["description"] = "Order by field (e.g., DocDate desc)", ["required"] = false, ["schema"] = new { type = "string" } },
-                    new Dictionary<string, object> { ["name"] = "$top", ["in"] = "query", ["description"] = "Max records (default: 5, max: 1000)", ["required"] = false, ["schema"] = new { type = "integer" } }
+                    new Dictionary<string, object> { ["name"] = "$top", ["in"] = "query", ["description"] = "Max records (default: 5, max: 1000)", ["required"] = false, ["schema"] = new { type = "integer" } },
+                    new Dictionary<string, object> { ["name"] = "$skip", ["in"] = "query", ["description"] = "Skip N records for pagination (default order applies if $orderby not specified)", ["required"] = false, ["schema"] = new { type = "integer" } }
                 };
             }
 
@@ -662,6 +718,7 @@ namespace GCR_autocount_api
                 paramList.Add(new Dictionary<string, object> { ["name"] = "$filter", ["in"] = "query", ["description"] = "Filter results (e.g., BalQty gt 100)", ["required"] = false, ["schema"] = new { type = "string" } });
                 paramList.Add(new Dictionary<string, object> { ["name"] = "$orderby", ["in"] = "query", ["description"] = "Order by field (e.g., ItemCode desc)", ["required"] = false, ["schema"] = new { type = "string" } });
                 paramList.Add(new Dictionary<string, object> { ["name"] = "$top", ["in"] = "query", ["description"] = "Max records (default: 5, max: 1000)", ["required"] = false, ["schema"] = new { type = "integer" } });
+                paramList.Add(new Dictionary<string, object> { ["name"] = "$skip", ["in"] = "query", ["description"] = "Skip N records for pagination (default order applies if $orderby not specified)", ["required"] = false, ["schema"] = new { type = "integer" } });
 
                 operations["parameters"] = paramList.ToArray();
             }

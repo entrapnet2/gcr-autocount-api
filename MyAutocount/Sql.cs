@@ -63,6 +63,15 @@ namespace GCR_autocount_api
             return Utils.DataTableToJsonString(table);
         }
 
+        public static string GetCountFromSql(AutoCount.Authentication.UserSession userSession, string tableName, Request request = null)
+        {
+            string dbName = userSession.DBSetting.DBName;
+            string countQuery = ODataHelper.BuildCountQuery(request, tableName, dbName);
+            DataTable table = userSession.DBSetting.GetDataTable(countQuery, false);
+            long count = table.Rows.Count > 0 ? Convert.ToInt64(table.Rows[0][0]) : 0;
+            return Newtonsoft.Json.JsonConvert.SerializeObject(new { count });
+        }
+
         public static void ExecuteSql(AutoCount.Authentication.UserSession userSession, string sql)
         {
             using (var conn = new System.Data.SqlClient.SqlConnection(userSession.DBSetting.ConnectionString))

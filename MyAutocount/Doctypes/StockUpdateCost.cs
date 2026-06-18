@@ -173,6 +173,21 @@ namespace GCR_autocount_api.Doctypes
                 }
             });
 
+            Get($"/{DoctypeName}/count", _ =>
+            {
+                try
+                {
+                    return Sql.GetCountFromSql(userSession, DatabaseTable, this.Request);
+                }
+                catch (Exception ex)
+                {
+                    Log(ex.ToString());
+                    Response response = ex.Message;
+                    response.StatusCode = HttpStatusCode.InternalServerError;
+                    return response;
+                }
+            });
+
         }
 
         private string GetAll()

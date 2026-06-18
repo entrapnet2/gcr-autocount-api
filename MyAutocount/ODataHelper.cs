@@ -15,7 +15,6 @@ namespace GCR_autocount_api
         {
             var queryParams = request.Query;
 
-            // Determine $top value - default to 5 if not specified
             int topValue = DefaultRows;
             if (queryParams.ContainsKey("$top"))
             {
@@ -26,8 +25,17 @@ namespace GCR_autocount_api
                 }
             }
 
+            int skipValue = 0;
+            if (queryParams.ContainsKey("$skip"))
+            {
+                string skip = queryParams["$skip"];
+                if (!string.IsNullOrEmpty(skip) && int.TryParse(skip, out int parsedSkip) && parsedSkip > 0)
+                {
+                    skipValue = parsedSkip;
+                }
+            }
+
             string selectClause = "*";
-            // $select
             if (queryParams.ContainsKey("$select"))
             {
                 string selectFields = queryParams["$select"];
@@ -38,9 +46,26 @@ namespace GCR_autocount_api
                 }
             }
 
-            var queryBuilder = new StringBuilder("SELECT TOP " + topValue + " " + selectClause + " FROM [" + dbName + "].[dbo].[" + tableName + "]");
+            string orderByClause = null;
+            if (queryParams.ContainsKey("$orderby"))
+            {
+                string orderBy = queryParams["$orderby"];
+                if (!string.IsNullOrEmpty(orderBy))
+                {
+                    string[] orderParts = orderBy.Split(' ');
+                    string field = orderParts[0];
+                    string direction = (orderParts.Length > 1 && orderParts[1].ToLower() == "desc") ? "DESC" : "ASC";
+                    orderByClause = "[" + field + "] " + direction;
+                }
+            }
 
-            // $filter
+            if (skipValue > 0 && orderByClause == null)
+            {
+                orderByClause = "(SELECT 0)";
+            }
+
+            var queryBuilder = new StringBuilder("SELECT " + selectClause + " FROM [" + dbName + "].[dbo].[" + tableName + "]");
+
             if (queryParams.ContainsKey("$filter"))
             {
                 string filter = queryParams["$filter"];
@@ -51,17 +76,18 @@ namespace GCR_autocount_api
                 }
             }
 
-            // $orderby
-            if (queryParams.ContainsKey("$orderby"))
+            if (skipValue > 0)
             {
-                string orderBy = queryParams["$orderby"];
-                if (!string.IsNullOrEmpty(orderBy))
-                {
-                    string[] orderParts = orderBy.Split(' ');
-                    string field = orderParts[0];
-                    string direction = (orderParts.Length > 1 && orderParts[1].ToLower() == "desc") ? "DESC" : "ASC";
-                    queryBuilder.Append(" ORDER BY [" + field + "] " + direction);
-                }
+                queryBuilder.Append(" ORDER BY " + orderByClause + " OFFSET " + skipValue + " ROWS FETCH NEXT " + topValue + " ROWS ONLY");
+            }
+            else if (orderByClause != null)
+            {
+                queryBuilder.Append(" ORDER BY " + orderByClause);
+                queryBuilder.Replace("SELECT " + selectClause, "SELECT TOP " + topValue + " " + selectClause);
+            }
+            else
+            {
+                queryBuilder.Replace("SELECT " + selectClause, "SELECT TOP " + topValue + " " + selectClause);
             }
 
             return queryBuilder.ToString();
@@ -108,9 +134,39 @@ namespace GCR_autocount_api
                 }
             }
 
+            int skipValue = 0;
+            if (queryParams.ContainsKey("$skip"))
+            {
+                string skip = queryParams["$skip"];
+                if (!string.IsNullOrEmpty(skip) && int.TryParse(skip, out int parsedSkip) && parsedSkip > 0)
+                {
+                    skipValue = parsedSkip;
+                }
+            }
+
+            string orderByClause = null;
+            if (queryParams.ContainsKey("$orderby"))
+            {
+                string orderBy = queryParams["$orderby"];
+                if (!string.IsNullOrEmpty(orderBy))
+                {
+                    string[] orderParts = orderBy.Split(' ');
+                    string field = orderParts[0];
+                    string direction = (orderParts.Length > 1 && orderParts[1].ToLower() == "desc") ? "DESC" : "ASC";
+                    orderByClause = "[" + field + "] " + direction;
+                }
+            }
+
+            if (skipValue > 0 && orderByClause == null)
+            {
+                orderByClause = "(SELECT 0)";
+            }
+
+            string selectPrefix = skipValue > 0 ? "SELECT " : "SELECT TOP " + topValue + " ";
+
             if (string.IsNullOrEmpty(existingWhere))
             {
-                queryBuilder.Append(baseQuery.Replace("SELECT ", "SELECT TOP " + topValue + " "));
+                queryBuilder.Append(baseQuery.Replace("SELECT ", selectPrefix));
             }
             else
             {
@@ -119,7 +175,7 @@ namespace GCR_autocount_api
                 {
                     string selectPart = baseQuery.Substring(0, whereIndex);
                     string wherePart = baseQuery.Substring(whereIndex + 7);
-                    queryBuilder.Append(selectPart.Replace("SELECT ", "SELECT TOP " + topValue + " "));
+                    queryBuilder.Append(selectPart.Replace("SELECT ", selectPrefix));
                     queryBuilder.Append(" WHERE ");
                     queryBuilder.Append(wherePart);
 
@@ -134,20 +190,17 @@ namespace GCR_autocount_api
                 }
                 else
                 {
-                    queryBuilder.Append(baseQuery.Replace("SELECT ", "SELECT TOP " + topValue + " "));
+                    queryBuilder.Append(baseQuery.Replace("SELECT ", selectPrefix));
                 }
             }
 
-            if (queryParams.ContainsKey("$orderby"))
+            if (skipValue > 0)
             {
-                string orderBy = queryParams["$orderby"];
-                if (!string.IsNullOrEmpty(orderBy))
-                {
-                    string[] orderParts = orderBy.Split(' ');
-                    string field = orderParts[0];
-                    string direction = (orderParts.Length > 1 && orderParts[1].ToLower() == "desc") ? "DESC" : "ASC";
-                    queryBuilder.Append(" ORDER BY [" + field + "] " + direction);
-                }
+                queryBuilder.Append(" ORDER BY " + orderByClause + " OFFSET " + skipValue + " ROWS FETCH NEXT " + topValue + " ROWS ONLY");
+            }
+            else if (orderByClause != null)
+            {
+                queryBuilder.Append(" ORDER BY " + orderByClause);
             }
 
             return queryBuilder.ToString();
@@ -159,6 +212,7 @@ namespace GCR_autocount_api
                 return "[]";
 
             int topValue = DefaultRows;
+            int skipValue = 0;
             DataView dv = table.DefaultView;
 
             if (request != null && request.Query != null)
@@ -182,20 +236,23 @@ namespace GCR_autocount_api
                         topValue = Math.Min(requestedTop, MaxRows);
                     }
                 }
+
+                if (!string.IsNullOrEmpty(request.Query["$skip"]))
+                {
+                    if (int.TryParse(request.Query["$skip"], out int parsedSkip) && parsedSkip > 0)
+                    {
+                        skipValue = parsedSkip;
+                    }
+                }
             }
 
             DataTable resultTable = dv.ToTable();
-            if (resultTable.Rows.Count > topValue)
+            DataTable limitedTable = resultTable.Clone();
+            for (int i = skipValue; i < skipValue + topValue && i < resultTable.Rows.Count; i++)
             {
-                DataTable limitedTable = resultTable.Clone();
-                for (int i = 0; i < topValue && i < resultTable.Rows.Count; i++)
-                {
-                    limitedTable.ImportRow(resultTable.Rows[i]);
-                }
-                return Utils.DataTableToJsonString(limitedTable);
+                limitedTable.ImportRow(resultTable.Rows[i]);
             }
-
-            return Utils.DataTableToJsonString(resultTable);
+            return Utils.DataTableToJsonString(limitedTable);
         }
 
         private static string ParseFilterForDataView(string filter)
@@ -209,6 +266,23 @@ namespace GCR_autocount_api
             filter = filter.Replace(" and ", " AND ");
             filter = filter.Replace(" or ", " OR ");
             return filter;
+        }
+
+        public static string BuildCountQuery(Nancy.Request request, string tableName, string dbName)
+        {
+            var queryBuilder = new StringBuilder("SELECT COUNT(*) FROM [" + dbName + "].[dbo].[" + tableName + "]");
+
+            if (request != null && request.Query != null && request.Query.ContainsKey("$filter"))
+            {
+                string filter = request.Query["$filter"];
+                if (!string.IsNullOrEmpty(filter))
+                {
+                    string whereClause = ParseFilter(filter);
+                    queryBuilder.Append(" WHERE " + whereClause);
+                }
+            }
+
+            return queryBuilder.ToString();
         }
     }
 }

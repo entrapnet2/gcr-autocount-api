@@ -105,6 +105,21 @@ namespace GCR_autocount_api.Doctypes
                     return response;
                 }
             });
+
+            Get("/StockBalance/count", _ =>
+            {
+                try
+                {
+                    return Sql.GetCountFromSql(userSession, "ItemLocation", this.Request);
+                }
+                catch (Exception ex)
+                {
+                    Log(ex.ToString());
+                    Response response = ex.Message;
+                    response.StatusCode = HttpStatusCode.InternalServerError;
+                    return response;
+                }
+            });
         }
 
         private string GetAll(Request request)
