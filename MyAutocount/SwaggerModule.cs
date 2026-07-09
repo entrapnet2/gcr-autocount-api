@@ -355,8 +355,8 @@ namespace GCR_autocount_api
                 ["/DeliveryOrder/count"] = GetPathItem("GET", "Count Delivery Orders", "Sales", "Get total number of delivery order records. Supports optional $filter for filtered counts"),
                 ["/DeliveryOrder/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Delivery Order", "Sales", "Retrieve a single delivery order"),
                 ["/DeliveryOrder/getDetail/{docNo}"] = GetPathItem("GET", "Get Delivery Order Details", "Sales", "Retrieve delivery order with details"),
-                ["/DeliveryOrder/add"] = GetPathItem("POST", "Add Delivery Order", "Sales", "Create a new delivery order", true, new {
-                    docNo = "DO-00001",
+                ["/DeliveryOrder/add"] = GetPathItem("POST", "Add Delivery Order", "Sales", "Create a new delivery order\n\n**docNo is optional**: Omit or pass null/empty to let AutoCount auto-generate the running number.", true, new {
+                    docNo = "",
                     debtorCode = "2200-T001",
                     date = "2024-01-15",
                     shipInfo = "Deliver to customer address",
@@ -753,6 +753,7 @@ namespace GCR_autocount_api
                 ["StockTransfer"] = new[] { "DocNo", "DocDate", "FromLoc", "ToLoc", "Total", "Status" },
                 ["StockAssembly"] = new[] { "DocNo", "DocDate", "Total", "Status" },
                 ["SalesAgent"] = new[] { "AgentCode", "AgentName", "Phone", "Email" },
+                ["StockLocation"] = new[] { "Location", "Description", "Address1", "Phone1", "Contact" },
                 ["JournalEntry"] = new[] { "DocNo", "DocDate", "Description", "TotalDebit", "TotalCredit" }
             };
 

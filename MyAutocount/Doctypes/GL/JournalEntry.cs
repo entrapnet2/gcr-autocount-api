@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Nancy;
 using Nancy.Extensions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static GCR_autocount_api.Utils;
 
 namespace GCR_autocount_api.Doctypes.GL
@@ -155,7 +156,7 @@ namespace GCR_autocount_api.Doctypes.GL
 
                 doc.DocNo = docNo;
                 doc.DocDate = DateStringToDateTime(data[JournalEntryConstants.DocDate].ToString());
-                if (data.Contains(JournalEntryConstants.Description) && data[JournalEntryConstants.Description] != null) doc.Description = data[JournalEntryConstants.Description];
+                if (((JObject)data).ContainsKey(JournalEntryConstants.Description) && data[JournalEntryConstants.Description] != null) doc.Description = data[JournalEntryConstants.Description];
 
                 dynamic detailList = data[JournalEntryConstants.DetailList];
 
@@ -163,7 +164,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 {
                     AutoCount.GL.JournalEntry.JournalEntryDetail detail = doc.AddDetail();
                     detail.AccNo = detailObject[JournalEntryConstants.AccNo].ToString();
-                    if (detailObject.Contains(JournalEntryConstants.Description) && detailObject[JournalEntryConstants.Description] != null) detail.Description = detailObject[JournalEntryConstants.Description].ToString();
+                    if (((JObject)detailObject).ContainsKey(JournalEntryConstants.Description) && detailObject[JournalEntryConstants.Description] != null) detail.Description = detailObject[JournalEntryConstants.Description].ToString();
                     detail.DR = decimal.Parse(detailObject[JournalEntryConstants.Debit].ToString());
                     detail.CR = decimal.Parse(detailObject[JournalEntryConstants.Credit].ToString());
                 }
@@ -188,7 +189,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 AutoCount.GL.JournalEntry.JournalEntry doc = cmd.Edit(docNo);
 
                 doc.DocDate = DateStringToDateTime(data[JournalEntryConstants.DocDate].ToString());
-                if (data.Contains(JournalEntryConstants.Description) && data[JournalEntryConstants.Description] != null) doc.Description = data[JournalEntryConstants.Description];
+                if (((JObject)data).ContainsKey(JournalEntryConstants.Description) && data[JournalEntryConstants.Description] != null) doc.Description = data[JournalEntryConstants.Description];
 
                 dynamic detailList = data[JournalEntryConstants.DetailList];
 
@@ -198,7 +199,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 {
                     AutoCount.GL.JournalEntry.JournalEntryDetail detail = doc.AddDetail();
                     detail.AccNo = detailObject[JournalEntryConstants.AccNo].ToString();
-                    if (detailObject.Contains(JournalEntryConstants.Description) && detailObject[JournalEntryConstants.Description] != null) detail.Description = detailObject[JournalEntryConstants.Description].ToString();
+                    if (((JObject)detailObject).ContainsKey(JournalEntryConstants.Description) && detailObject[JournalEntryConstants.Description] != null) detail.Description = detailObject[JournalEntryConstants.Description].ToString();
                     detail.DR = decimal.Parse(detailObject[JournalEntryConstants.Debit].ToString());
                     detail.CR = decimal.Parse(detailObject[JournalEntryConstants.Credit].ToString());
                 }

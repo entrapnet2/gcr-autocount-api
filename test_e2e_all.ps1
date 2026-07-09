@@ -336,11 +336,49 @@ if ($result.Status -eq "PASS") {
     Write-Host "   $($result.Status): DELETE /Creditor/delete/$testCreditorCode" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
 }
 
+Write-Host "`n7. Testing StockLocation..." -ForegroundColor Yellow
+$testLocationCode = "WH$($timestamp.Substring(10))"
+
+$result = Test-ApiEndpoint -Name "GET StockLocation/getAll" -Method Get -Endpoint "/StockLocation/getAll" -Headers $headers
+Write-Host "   $($result.Status): GET /StockLocation/getAll" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+$result = Test-ApiEndpoint -Name "GET StockLocation/count" -Method Get -Endpoint "/StockLocation/count" -Headers $headers
+Write-Host "   $($result.Status): GET /StockLocation/count" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+$result = Test-ApiEndpoint -Name "POST StockLocation/add" -Method Post -Endpoint "/StockLocation/add" -Headers $headers -Body @{
+    locationCode = $testLocationCode
+    description = "Test Warehouse $timestamp"
+    description2 = "Secondary description"
+    address1 = "123 Industrial Road"
+    address2 = "Kawasan Perindustrian"
+    address3 = "Penang"
+    address4 = "12000"
+    phone = "04-1234567"
+    fax = "04-1234568"
+    contact = "Mr. Tan"
+}
+Write-Host "   $($result.Status): POST /StockLocation/add" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+if ($result.Status -eq "PASS") {
+    $result = Test-ApiEndpoint -Name "GET StockLocation/getSingle" -Method Get -Endpoint "/StockLocation/getSingle/$testLocationCode" -Headers $headers
+    Write-Host "   $($result.Status): GET /StockLocation/getSingle/$testLocationCode" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+    
+    $result = Test-ApiEndpoint -Name "PUT StockLocation/edit" -Method Put -Endpoint "/StockLocation/edit" -Headers $headers -Body @{
+        locationCode = $testLocationCode
+        description = "Updated Warehouse $timestamp"
+        phone = "04-7654321"
+    }
+    Write-Host "   $($result.Status): PUT /StockLocation/edit" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+    
+    $result = Test-ApiEndpoint -Name "DELETE StockLocation/delete" -Method Delete -Endpoint "/StockLocation/delete/$testLocationCode" -Headers $headers
+    Write-Host "   $($result.Status): DELETE /StockLocation/delete/$testLocationCode" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+}
+
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "TRANSACTION TESTS" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
-Write-Host "`n7. Testing SalesInvoice..." -ForegroundColor Yellow
+Write-Host "`n8. Testing SalesInvoice..." -ForegroundColor Yellow
 $testInvDocNo = "INV-$timestamp"
 
 $result = Test-ApiEndpoint -Name "GET SalesInvoice/getAll" -Method Get -Endpoint "/SalesInvoice/getAll" -Headers $headers

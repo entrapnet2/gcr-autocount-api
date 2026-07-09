@@ -12,7 +12,7 @@ namespace GCR_autocount_api
 {
     public class MySettings
     {
-        const string SettingsJsonFilename = "settings.json";
+        static readonly string SettingsJsonFilename = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
         public string ipAddress;
         public string port;
         public string databaseName;

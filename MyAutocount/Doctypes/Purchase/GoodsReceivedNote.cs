@@ -2,6 +2,7 @@ using System;
 using Nancy;
 using Nancy.Extensions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static GCR_autocount_api.Utils;
 
 namespace GCR_autocount_api.Doctypes.Purchase
@@ -87,7 +88,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
             string docNo = data.docNo;
             DateTime docDate = DateStringToDateTime(data.docDate.ToString());
             string creditorCode = data.creditorCode;
-            string description = data.Contains("description") ? data.description : "";
+            string description = ((JObject)data).ContainsKey("description") ? data.description : "";
 
             var cmd = AutoCount.Invoicing.Purchase.GoodsReceivedNote.GoodsReceivedNoteCommand.Create(userSession, userSession.DBSetting);
             var doc = cmd.AddNew();
@@ -96,7 +97,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
             doc.CreditorCode = creditorCode;
             doc.Description = description;
 
-            if (data.Contains("detailList"))
+            if (((JObject)data).ContainsKey("detailList"))
             {
                 foreach (dynamic item in data.detailList)
                 {
@@ -104,7 +105,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
                     detail.ItemCode = item.itemCode.ToString();
                     detail.UOM = item.uom.ToString();
                     detail.Qty = decimal.Parse(item.quantity.ToString());
-                    if (item.Contains("unitPrice"))
+                    if (((JObject)item).ContainsKey("unitPrice"))
                         detail.UnitPrice = decimal.Parse(item.unitPrice.ToString());
                 }
             }
@@ -124,11 +125,11 @@ namespace GCR_autocount_api.Doctypes.Purchase
             var doc = cmd.Edit(docNo);
 
             doc.DocDate = DateStringToDateTime(data.docDate.ToString());
-            if (data.Contains("creditorCode")) doc.CreditorCode = data.creditorCode;
-            if (data.Contains("description")) doc.Description = data.description;
+            if (((JObject)data).ContainsKey("creditorCode")) doc.CreditorCode = data.creditorCode;
+            if (((JObject)data).ContainsKey("description")) doc.Description = data.description;
 
             doc.ClearDetails();
-            if (data.Contains("detailList"))
+            if (((JObject)data).ContainsKey("detailList"))
             {
                 foreach (dynamic item in data.detailList)
                 {
@@ -136,7 +137,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
                     detail.ItemCode = item.itemCode.ToString();
                     detail.UOM = item.uom.ToString();
                     detail.Qty = decimal.Parse(item.quantity.ToString());
-                    if (item.Contains("unitPrice"))
+                    if (((JObject)item).ContainsKey("unitPrice"))
                         detail.UnitPrice = decimal.Parse(item.unitPrice.ToString());
                 }
             }

@@ -171,7 +171,7 @@ namespace GCR_autocount_api.Doctypes.Stock
                 DateTime docDate = DateStringToDateTime(data[StockTransferConstants.DocDate].ToString());
                 string fromLocation = data[StockTransferConstants.FromLocation];
                 string toLocation = data[StockTransferConstants.ToLocation];
-                string reason = data.Contains(StockTransferConstants.Reason) ? data[StockTransferConstants.Reason] : "";
+                string reason = ((Newtonsoft.Json.Linq.JObject)data).ContainsKey(StockTransferConstants.Reason) ? data[StockTransferConstants.Reason] : "";
 
                 AutoCount.Stock.StockTransfer.StockTransferCommand cmd =
                     AutoCount.Stock.StockTransfer.StockTransferCommand.Create(userSession, userSession.DBSetting);
@@ -216,7 +216,7 @@ namespace GCR_autocount_api.Doctypes.Stock
                 doc.DocDate = DateStringToDateTime(data[StockTransferConstants.DocDate].ToString());
                 doc.FromLocation = data[StockTransferConstants.FromLocation];
                 doc.ToLocation = data[StockTransferConstants.ToLocation];
-                if (data.Contains(StockTransferConstants.Reason))
+                if (((Newtonsoft.Json.Linq.JObject)data).ContainsKey(StockTransferConstants.Reason))
                     doc.Reason = data[StockTransferConstants.Reason];
 
                 doc.ClearDetails();

@@ -174,33 +174,42 @@ namespace GCR_autocount_api.Doctypes.Sales
         {
             if (Auth.Login(userSession))
             {
-                string docNo = data[DeliveryOrderConstants.DocNo];
+                string docNo = data.docNo;
 
                 AutoCount.Invoicing.Sales.DeliveryOrder.DeliveryOrderCommand cmd =
                     AutoCount.Invoicing.Sales.DeliveryOrder.DeliveryOrderCommand.Create(userSession, userSession.DBSetting);
                 AutoCount.Invoicing.Sales.DeliveryOrder.DeliveryOrder doc = cmd.AddNew();
 
-                doc.DocNo = docNo;
-                doc.DebtorCode = data[DeliveryOrderConstants.DebtorCode];
-                doc.DocDate = DateStringToDateTime(data[DeliveryOrderConstants.Date].ToString());
-                doc.ShipInfo = data[DeliveryOrderConstants.ShipInfo];
-
-                dynamic detailList = data[DeliveryOrderConstants.DetailList];
-
-                foreach (dynamic detailObject in detailList)
+                if (!string.IsNullOrEmpty(docNo?.ToString()))
                 {
-                    AutoCount.Invoicing.Sales.DeliveryOrder.DeliveryOrderDetail detail = doc.AddDetail();
-                    detail.ItemCode = detailObject[DeliveryOrderConstants.ItemCode].ToString();
-                    detail.UOM = detailObject[DeliveryOrderConstants.Uom].ToString();
-                    detail.Qty = decimal.Parse(detailObject[DeliveryOrderConstants.Quantity].ToString());
-                    detail.UnitPrice = decimal.Parse(detailObject[DeliveryOrderConstants.UnitPrice].ToString());
-                    detail.Discount = detailObject[DeliveryOrderConstants.Discount].ToString();
+                    doc.DocNo = docNo;
+                }
+                doc.DebtorCode = data.debtorCode;
+                doc.DocDate = DateStringToDateTime(data.date.ToString());
+                doc.ShipInfo = data.shipInfo;
+
+                if (data.detailList != null)
+                {
+                    dynamic detailList = data.detailList;
+
+                    foreach (dynamic detailObject in detailList)
+                    {
+                        AutoCount.Invoicing.Sales.DeliveryOrder.DeliveryOrderDetail detail = doc.AddDetail();
+                        detail.ItemCode = detailObject.itemCode.ToString();
+                        detail.UOM = detailObject.uom.ToString();
+                        detail.Qty = decimal.Parse(detailObject.quantity.ToString());
+                        detail.UnitPrice = decimal.Parse(detailObject.unitPrice.ToString());
+                        detail.Discount = detailObject.discount.ToString();
+                        
+                        if (detailObject.location != null)
+                            detail.Location = detailObject.location.ToString();
+                    }
                 }
 
                 doc.Save();
-                Log($"{DoctypeName} added: {docNo}");
+                Log($"{DoctypeName} added: {doc.DocNo}");
 
-                return $"{DoctypeName} added: {docNo}";
+                return $"{DoctypeName} added: {doc.DocNo}";
 
             }
             Log($"{DoctypeName} add error: Login failed");
@@ -235,6 +244,9 @@ namespace GCR_autocount_api.Doctypes.Sales
                     detail.Qty = decimal.Parse(detailObject[DeliveryOrderConstants.Quantity].ToString());
                     detail.UnitPrice = decimal.Parse(detailObject[DeliveryOrderConstants.UnitPrice].ToString());
                     detail.Discount = detailObject[DeliveryOrderConstants.Discount].ToString();
+                    
+                    if (detailObject[DeliveryOrderConstants.Location] != null)
+                        detail.Location = detailObject[DeliveryOrderConstants.Location].ToString();
                 }
 
                 doc.Save();
@@ -281,6 +293,7 @@ namespace GCR_autocount_api.Doctypes.Sales
         internal static string Quantity { get; } = "quantity";
         internal static string UnitPrice { get; } = "unitPrice";
         internal static string Discount { get; } = "discount";
+        internal static string Location { get; } = "location";
 
     }
 

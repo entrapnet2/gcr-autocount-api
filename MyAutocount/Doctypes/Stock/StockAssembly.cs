@@ -2,6 +2,7 @@ using System;
 using Nancy;
 using Nancy.Extensions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static GCR_autocount_api.Utils;
 
 namespace GCR_autocount_api.Doctypes.Stock
@@ -101,7 +102,7 @@ namespace GCR_autocount_api.Doctypes.Stock
                 doc.Description = description;
 
                 // Add materials (use AddDetail for AutoCount2 API)
-                if (data.Contains(StockAssemblyConstants.MaterialList))
+                if (((JObject)data).ContainsKey(StockAssemblyConstants.MaterialList))
                 {
                     foreach (dynamic mat in data[StockAssemblyConstants.MaterialList])
                     {
