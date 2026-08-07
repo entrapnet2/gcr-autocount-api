@@ -20,6 +20,18 @@ namespace GCR_autocount_api.Doctypes.Sales
         AutoCount.Data.DBSetting dbSetting;
         AutoCount.Authentication.UserSession userSession;
 
+        private string SelectWithActive => "v.*, d.IsActive";
+
+        private string FromWithActive
+        {
+            get
+            {
+                string dbName = dbSetting.DBName;
+                return "[" + dbName + "].[dbo].[" + DatabaseTable + "] v " +
+                    "LEFT JOIN [" + dbName + "].[dbo].[Debtor] d ON d.AccNo = v.DebtorCode";
+            }
+        }
+
         public Debtor()
         {
             dbSetting = Auth.dbSetting;
@@ -122,7 +134,7 @@ namespace GCR_autocount_api.Doctypes.Sales
             {
                 try
                 {
-                    return Sql.GetCountFromSql(userSession, DatabaseTable, this.Request);
+                    return Sql.GetCountFromSql(userSession, DatabaseTable, this.Request, FromWithActive);
                 }
                 catch (Exception ex)
                 {
@@ -137,11 +149,11 @@ namespace GCR_autocount_api.Doctypes.Sales
 
         private string GetAll(Request request = null)
         {
-            return Sql.GetAllFromSql(userSession, DatabaseTable, request);
+            return Sql.GetAllFromSql(userSession, DatabaseTable, request, FromWithActive, SelectWithActive);
         }
         private string GetSingle(string debtorCode)
         {
-            return Sql.GetSingleFromSql(userSession, DatabaseTable, PrimaryKey, debtorCode);
+            return Sql.GetSingleFromSql(userSession, DatabaseTable, PrimaryKey, debtorCode, FromWithActive, SelectWithActive);
         }
 
         private string Add(dynamic data)

@@ -189,6 +189,8 @@ namespace GCR_autocount_api.Doctypes.Sales
 
                 foreach (dynamic detailObject in detailList)
                 {
+                    int rowCountBefore = doc.DataTableDetail.Rows.Count;
+
                     doc.PartialTransfer(
                         AutoCount.Invoicing.Sales.TransferFrom.DeliveryOrder,
                         detailObject[DeliveryReturnConstants.DeliveryOrderNo].ToString(),
@@ -197,6 +199,8 @@ namespace GCR_autocount_api.Doctypes.Sales
                         decimal.Parse(detailObject[DeliveryReturnConstants.Quantity].ToString()),
                         0M      // focQty 
                         );
+
+                    SetTransferredDetailLocation(doc, rowCountBefore, detailObject[DeliveryReturnConstants.Location]);
                 }
 
                 doc.Save();
@@ -237,6 +241,8 @@ namespace GCR_autocount_api.Doctypes.Sales
 
                 foreach (dynamic detailObject in detailList)
                 {
+                    int rowCountBefore = doc.DataTableDetail.Rows.Count;
+
                     doc.PartialTransfer(
                         AutoCount.Invoicing.Sales.TransferFrom.DeliveryOrder,
                         detailObject[DeliveryReturnConstants.DeliveryOrderNo].ToString(),
@@ -245,6 +251,8 @@ namespace GCR_autocount_api.Doctypes.Sales
                         decimal.Parse(detailObject[DeliveryReturnConstants.Quantity].ToString()),
                         0M      // focQty 
                         );
+
+                    SetTransferredDetailLocation(doc, rowCountBefore, detailObject[DeliveryReturnConstants.Location]);
                 }
 
                 doc.Save();
@@ -255,6 +263,19 @@ namespace GCR_autocount_api.Doctypes.Sales
             }
             Log($"{DoctypeName} edit error: Login failed");
             return $"{DoctypeName} edit error: Login failed";
+        }
+
+        private void SetTransferredDetailLocation(AutoCount.Invoicing.Sales.DeliveryReturn.DeliveryReturn doc, int rowCountBefore, dynamic location)
+        {
+            if (location == null || string.IsNullOrEmpty(location.ToString()))
+                return;
+
+            System.Data.DataTable detailTable = doc.DataTableDetail;
+            if (detailTable.Rows.Count <= rowCountBefore)
+                return;
+
+            long dtlKey = Convert.ToInt64(detailTable.Rows[detailTable.Rows.Count - 1]["DtlKey"]);
+            doc.EditDetail(dtlKey).Location = location.ToString();
         }
 
         private string Delete(string docNo)
@@ -287,6 +308,7 @@ namespace GCR_autocount_api.Doctypes.Sales
         internal static string ItemCode { get; } = "itemCode";
         internal static string Uom { get; } = "uom";
         internal static string Quantity { get; } = "quantity";
+        internal static string Location { get; } = "location";
 
     }
 }

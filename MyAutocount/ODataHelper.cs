@@ -11,7 +11,7 @@ namespace GCR_autocount_api
         private const int DefaultRows = 5;
         private const int MaxRows = 1000;
 
-        public static string BuildQuery(string baseQuery, Nancy.Request request, string tableName, string dbName)
+        public static string BuildQuery(string baseQuery, Nancy.Request request, string tableName, string dbName, string customFrom = null)
         {
             var queryParams = request.Query;
 
@@ -64,7 +64,11 @@ namespace GCR_autocount_api
                 orderByClause = "(SELECT 0)";
             }
 
-            var queryBuilder = new StringBuilder("SELECT " + selectClause + " FROM [" + dbName + "].[dbo].[" + tableName + "]");
+            string fromSource = string.IsNullOrEmpty(customFrom)
+                ? "[" + dbName + "].[dbo].[" + tableName + "]"
+                : customFrom;
+
+            var queryBuilder = new StringBuilder("SELECT " + selectClause + " FROM " + fromSource);
 
             if (queryParams.ContainsKey("$filter"))
             {
@@ -268,9 +272,13 @@ namespace GCR_autocount_api
             return filter;
         }
 
-        public static string BuildCountQuery(Nancy.Request request, string tableName, string dbName)
+        public static string BuildCountQuery(Nancy.Request request, string tableName, string dbName, string customFrom = null)
         {
-            var queryBuilder = new StringBuilder("SELECT COUNT(*) FROM [" + dbName + "].[dbo].[" + tableName + "]");
+            string fromSource = string.IsNullOrEmpty(customFrom)
+                ? "[" + dbName + "].[dbo].[" + tableName + "]"
+                : customFrom;
+
+            var queryBuilder = new StringBuilder("SELECT COUNT(*) FROM " + fromSource);
 
             if (request != null && request.Query != null && request.Query.ContainsKey("$filter"))
             {

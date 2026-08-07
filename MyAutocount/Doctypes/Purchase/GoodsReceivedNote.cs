@@ -86,13 +86,17 @@ namespace GCR_autocount_api.Doctypes.Purchase
             if (!Auth.Login(userSession)) return $"{DoctypeName} add error: Login failed";
 
             string docNo = data.docNo;
-            DateTime docDate = DateStringToDateTime(data.docDate.ToString());
+            DateTime docDate = DateStringToDateTime(data.date.ToString());
             string creditorCode = data.creditorCode;
             string description = ((JObject)data).ContainsKey("description") ? data.description : "";
 
             var cmd = AutoCount.Invoicing.Purchase.GoodsReceivedNote.GoodsReceivedNoteCommand.Create(userSession, userSession.DBSetting);
             var doc = cmd.AddNew();
-            doc.DocNo = docNo;
+
+            if (!string.IsNullOrEmpty(docNo?.ToString()))
+            {
+                doc.DocNo = docNo;
+            }
             doc.DocDate = docDate;
             doc.CreditorCode = creditorCode;
             doc.Description = description;
@@ -107,13 +111,15 @@ namespace GCR_autocount_api.Doctypes.Purchase
                     detail.Qty = decimal.Parse(item.quantity.ToString());
                     if (((JObject)item).ContainsKey("unitPrice"))
                         detail.UnitPrice = decimal.Parse(item.unitPrice.ToString());
+                    if (((JObject)item).ContainsKey("location"))
+                        detail.Location = item.location.ToString();
                 }
             }
 
             doc.Save();
-            Log($"{DoctypeName} added: {docNo}");
+            Log($"{DoctypeName} added: {doc.DocNo}");
 
-            return $"{DoctypeName} added: {docNo}";
+            return $"{DoctypeName} added: {doc.DocNo}";
         }
 
         private string Edit(dynamic data)
@@ -124,7 +130,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
             var cmd = AutoCount.Invoicing.Purchase.GoodsReceivedNote.GoodsReceivedNoteCommand.Create(userSession, userSession.DBSetting);
             var doc = cmd.Edit(docNo);
 
-            doc.DocDate = DateStringToDateTime(data.docDate.ToString());
+            doc.DocDate = DateStringToDateTime(data.date.ToString());
             if (((JObject)data).ContainsKey("creditorCode")) doc.CreditorCode = data.creditorCode;
             if (((JObject)data).ContainsKey("description")) doc.Description = data.description;
 
@@ -139,6 +145,8 @@ namespace GCR_autocount_api.Doctypes.Purchase
                     detail.Qty = decimal.Parse(item.quantity.ToString());
                     if (((JObject)item).ContainsKey("unitPrice"))
                         detail.UnitPrice = decimal.Parse(item.unitPrice.ToString());
+                    if (((JObject)item).ContainsKey("location"))
+                        detail.Location = item.location.ToString();
                 }
             }
 

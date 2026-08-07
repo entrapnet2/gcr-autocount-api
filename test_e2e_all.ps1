@@ -66,6 +66,31 @@ function Get-AuthToken {
     return $response.token
 }
 
+function Test-ResponseHasField {
+    param(
+        [string]$Name,
+        [object]$Response,
+        [string]$FieldName
+    )
+
+    $rows = @($Response)
+    $hasField = $false
+    if ($rows.Count -gt 0 -and $rows[0] -ne $null) {
+        $hasField = $rows[0].PSObject.Properties.Match($FieldName).Count -gt 0
+    }
+
+    $status = if ($hasField) { "PASS" } else { "FAIL" }
+    if ($hasField) { $script:passCount++ } else { $script:failCount++ }
+    $script:testResults += @{
+        Name = $Name
+        Method = "CHECK"
+        Endpoint = $Name
+        Status = $status
+        Error = $(if (-not $hasField) { "Field '$FieldName' not found in response" } else { $null })
+    }
+    Write-Host "   ${status}: $Name (field: $FieldName)" -ForegroundColor $(if($hasField){"Green"}else{"Red"})
+}
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "AutoCount E2E Test Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -222,6 +247,10 @@ $testDebtorCode = "2200-T$($timestamp.Substring(10))"
 $result = Test-ApiEndpoint -Name "GET Debtor/getAll" -Method Get -Endpoint "/Debtor/getAll" -Headers $headers
 Write-Host "   $($result.Status): GET /Debtor/getAll" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
 
+if ($result.Status -eq "PASS") {
+    Test-ResponseHasField -Name "Debtor getAll IsActive" -Response $result.Response -FieldName "IsActive"
+}
+
 $result = Test-ApiEndpoint -Name "POST Debtor/add" -Method Post -Endpoint "/Debtor/add" -Headers $headers -Body @{
     debtorCode = $testDebtorCode
     companyName = "Test Company $timestamp"
@@ -250,6 +279,10 @@ Write-Host "   $($result.Status): POST /Debtor/add" -ForegroundColor $(if($resul
 if ($result.Status -eq "PASS") {
     $result = Test-ApiEndpoint -Name "GET Debtor/getSingle" -Method Get -Endpoint "/Debtor/getSingle/$testDebtorCode" -Headers $headers
     Write-Host "   $($result.Status): GET /Debtor/getSingle/$testDebtorCode" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+    if ($result.Status -eq "PASS") {
+        Test-ResponseHasField -Name "Debtor getSingle IsActive" -Response $result.Response -FieldName "IsActive"
+    }
     
     $result = Test-ApiEndpoint -Name "PUT Debtor/edit" -Method Put -Endpoint "/Debtor/edit" -Headers $headers -Body @{
         debtorCode = $testDebtorCode
@@ -281,10 +314,14 @@ if ($result.Status -eq "PASS") {
 }
 
 Write-Host "`n6. Testing Creditor..." -ForegroundColor Yellow
-$testCreditorCode = "3100-Test$timestamp"
+$testCreditorCode = "3100-T$($timestamp.Substring(10))"
 
 $result = Test-ApiEndpoint -Name "GET Creditor/getAll" -Method Get -Endpoint "/Creditor/getAll" -Headers $headers
 Write-Host "   $($result.Status): GET /Creditor/getAll" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+if ($result.Status -eq "PASS") {
+    Test-ResponseHasField -Name "Creditor getAll IsActive" -Response $result.Response -FieldName "IsActive"
+}
 
 $result = Test-ApiEndpoint -Name "POST Creditor/add" -Method Post -Endpoint "/Creditor/add" -Headers $headers -Body @{
     creditorCode = $testCreditorCode
@@ -310,6 +347,10 @@ Write-Host "   $($result.Status): POST /Creditor/add" -ForegroundColor $(if($res
 if ($result.Status -eq "PASS") {
     $result = Test-ApiEndpoint -Name "GET Creditor/getSingle" -Method Get -Endpoint "/Creditor/getSingle/$testCreditorCode" -Headers $headers
     Write-Host "   $($result.Status): GET /Creditor/getSingle/$testCreditorCode" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+    if ($result.Status -eq "PASS") {
+        Test-ResponseHasField -Name "Creditor getSingle IsActive" -Response $result.Response -FieldName "IsActive"
+    }
     
     $result = Test-ApiEndpoint -Name "PUT Creditor/edit" -Method Put -Endpoint "/Creditor/edit" -Headers $headers -Body @{
         creditorCode = $testCreditorCode
@@ -405,12 +446,73 @@ if ($result.Status -eq "PASS" -and $result.Response) {
     
     $result = Test-ApiEndpoint -Name "GET SalesInvoice/getSingle" -Method Get -Endpoint "/SalesInvoice/getSingle/$savedDocNo" -Headers $headers
     Write-Host "   $($result.Status): GET /SalesInvoice/getSingle/$savedDocNo" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+    Test-ResponseHasField -Name "GET SalesInvoice/getSingle includes SourceDocNos" -Response $result.Response -FieldName "SourceDocNos"
+
+    $result = Test-ApiEndpoint -Name "GET SalesInvoice/getAll OData filter" -Method Get -Endpoint "/SalesInvoice/getAll?`$top=10&`$filter=DocNo%20eq%20'$savedDocNo'" -Headers $headers
+    Write-Host "   $($result.Status): GET /SalesInvoice/getAll?`$filter=DocNo eq '$savedDocNo'" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+    $result = Test-ApiEndpoint -Name "GET SalesInvoice/count OData filter" -Method Get -Endpoint "/SalesInvoice/count?`$filter=DocNo%20eq%20'$savedDocNo'" -Headers $headers
+    $countOk = ($result.Status -eq "PASS") -and ($result.Response.count -eq 1)
+    $status = if ($countOk) { "PASS" } else { "FAIL" }
+    if ($countOk) { $passCount++ } else { $failCount++ }
+    $testResults += @{ Name = "GET SalesInvoice/count filtered returns 1"; Method = "CHECK"; Endpoint = "/SalesInvoice/count"; Status = $status; Error = $(if (-not $countOk) { "Expected count=1, got: $($result.Response.count) ($($result.Error))" } else { $null }) }
+    Write-Host "   ${status}: GET /SalesInvoice/count?`$filter=DocNo eq '$savedDocNo' (expect count=1)" -ForegroundColor $(if($countOk){"Green"}else{"Red"})
+
+    $result = Test-ApiEndpoint -Name "GET SalesInvoice/getSingle (DO-linked)" -Method Get -Endpoint "/SalesInvoice/getSingle/IV-26-06-00001" -Headers $headers
+    $linkedRows = @($result.Response)
+    if ($result.Status -eq "PASS" -and $linkedRows.Count -gt 0 -and $linkedRows[0] -ne $null) {
+        $srcDocs = [string]$linkedRows[0].SourceDocNos
+        $linkedOk = $srcDocs -like "*DO-*"
+        $status = if ($linkedOk) { "PASS" } else { "FAIL" }
+        if ($linkedOk) { $passCount++ } else { $failCount++ }
+        $testResults += @{ Name = "GET SalesInvoice/getSingle DO-linked SourceDocNos"; Method = "CHECK"; Endpoint = "/SalesInvoice/getSingle/IV-26-06-00001"; Status = $status; Error = $(if (-not $linkedOk) { "SourceDocNos has no DO reference: [$srcDocs]" } else { $null }) }
+        Write-Host "   ${status}: SourceDocNos for IV-26-06-00001 = [$srcDocs]" -ForegroundColor $(if($linkedOk){"Green"}else{"Red"})
+    } else {
+        Write-Host "   SKIP: IV-26-06-00001 not found in database, skipping DO-link check" -ForegroundColor Yellow
+    }
     
     $result = Test-ApiEndpoint -Name "GET SalesInvoice/getDetail" -Method Get -Endpoint "/SalesInvoice/getDetail/$savedDocNo" -Headers $headers
     Write-Host "   $($result.Status): GET /SalesInvoice/getDetail/$savedDocNo" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
     
     $result = Test-ApiEndpoint -Name "DELETE SalesInvoice/delete" -Method Delete -Endpoint "/SalesInvoice/delete/$savedDocNo" -Headers $headers
     Write-Host "   $($result.Status): DELETE /SalesInvoice/delete/$savedDocNo" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+}
+
+Write-Host "`n9. Testing StockAdjustment..." -ForegroundColor Yellow
+$testAdjDocNo = "ADJ-$timestamp"
+
+$result = Test-ApiEndpoint -Name "GET StockAdjustment/getAll" -Method Get -Endpoint "/StockAdjustment/getAll" -Headers $headers
+Write-Host "   $($result.Status): GET /StockAdjustment/getAll" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+$result = Test-ApiEndpoint -Name "GET StockAdjustment/count" -Method Get -Endpoint "/StockAdjustment/count" -Headers $headers
+Write-Host "   $($result.Status): GET /StockAdjustment/count" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+$result = Test-ApiEndpoint -Name "POST StockAdjustment/add" -Method Post -Endpoint "/StockAdjustment/add" -Headers $headers -Body @{
+    docNo = $testAdjDocNo
+    dateString = (Get-Date).ToString("dd-MM-yyyy")
+    description = "Test Stock Adjustment $timestamp"
+    refDocNo = "REF-$timestamp"
+    detailList = @(
+        @{
+            itemCode = "01Z01Z01001BLU"
+            uom = "UNT"
+            quantity = 5
+            unitCost = 10.00
+        }
+    )
+}
+Write-Host "   $($result.Status): POST /StockAdjustment/add" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+if ($result.Status -eq "PASS") {
+    $result = Test-ApiEndpoint -Name "GET StockAdjustment/getSingle" -Method Get -Endpoint "/StockAdjustment/getSingle/$testAdjDocNo" -Headers $headers
+    Write-Host "   $($result.Status): GET /StockAdjustment/getSingle/$testAdjDocNo" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+    
+    $result = Test-ApiEndpoint -Name "GET StockAdjustment/getDetail" -Method Get -Endpoint "/StockAdjustment/getDetail/$testAdjDocNo" -Headers $headers
+    Write-Host "   $($result.Status): GET /StockAdjustment/getDetail/$testAdjDocNo" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+    
+    $result = Test-ApiEndpoint -Name "DELETE StockAdjustment/delete" -Method Delete -Endpoint "/StockAdjustment/delete/$testAdjDocNo" -Headers $headers
+    Write-Host "   $($result.Status): DELETE /StockAdjustment/delete/$testAdjDocNo" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
 }
 
 Write-Host "`n========================================" -ForegroundColor Cyan

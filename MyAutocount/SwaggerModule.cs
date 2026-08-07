@@ -169,9 +169,9 @@ namespace GCR_autocount_api
                 }),
                 ["/SalesAgent/delete/{agentCode}"] = GetPathItem("DELETE", "Delete Sales Agent", "Master Data", "Delete a sales agent"),
 
-                ["/Debtor/getAll"] = GetPathItem("GET", "Get all Debtors", "Master Data", "Retrieve all debtor records"),
-                ["/Debtor/count"] = GetPathItem("GET", "Count Debtors", "Master Data", "Get total number of debtor records. Supports optional $filter for filtered counts"),
-                ["/Debtor/getSingle/{debtorCode}"] = GetPathItem("GET", "Get Single Debtor", "Master Data", "Retrieve a single debtor"),
+                ["/Debtor/getAll"] = GetPathItem("GET", "Get all Debtors", "Master Data", "Retrieve all debtor records. Includes IsActive field ('T' = active, 'F' = inactive)"),
+                ["/Debtor/count"] = GetPathItem("GET", "Count Debtors", "Master Data", "Get total number of debtor records. Supports optional $filter for filtered counts (IsActive field available for filtering)"),
+                ["/Debtor/getSingle/{debtorCode}"] = GetPathItem("GET", "Get Single Debtor", "Master Data", "Retrieve a single debtor. Includes IsActive field ('T' = active, 'F' = inactive)"),
                 ["/Debtor/add"] = GetPathItem("POST", "Add Debtor", "Master Data", "Create a new debtor\n\n**Note**: debtorCode must follow existing format (e.g., 2200-T001). Parent GL account 2200-0000 must exist.", true, new {
                     debtorCode = "2200-T001",
                     companyName = "Customer ABC Sdn Bhd",
@@ -205,9 +205,9 @@ namespace GCR_autocount_api
                 }),
                 ["/Debtor/delete/{debtorCode}"] = GetPathItem("DELETE", "Delete Debtor", "Master Data", "Delete a debtor"),
 
-                ["/Creditor/getAll"] = GetPathItem("GET", "Get all Creditors", "Master Data", "Retrieve all creditor records"),
-                ["/Creditor/count"] = GetPathItem("GET", "Count Creditors", "Master Data", "Get total number of creditor records. Supports optional $filter for filtered counts"),
-                ["/Creditor/getSingle/{creditorCode}"] = GetPathItem("GET", "Get Single Creditor", "Master Data", "Retrieve a single creditor"),
+                ["/Creditor/getAll"] = GetPathItem("GET", "Get all Creditors", "Master Data", "Retrieve all creditor records. Includes IsActive field ('T' = active, 'F' = inactive)"),
+                ["/Creditor/count"] = GetPathItem("GET", "Count Creditors", "Master Data", "Get total number of creditor records. Supports optional $filter for filtered counts (IsActive field available for filtering)"),
+                ["/Creditor/getSingle/{creditorCode}"] = GetPathItem("GET", "Get Single Creditor", "Master Data", "Retrieve a single creditor. Includes IsActive field ('T' = active, 'F' = inactive)"),
                 ["/Creditor/add"] = GetPathItem("POST", "Add Creditor", "Master Data", "Create a new creditor\n\n**Note**: creditorCode must follow existing format (e.g., 3100-S001). Parent GL account 3100-0000 must exist.", true, new {
                     creditorCode = "3100-S001",
                     companyName = "Supplier XYZ Sdn Bhd",
@@ -330,9 +330,9 @@ namespace GCR_autocount_api
                 #endregion
 
                 #region Sales
-                ["/SalesInvoice/getAll"] = GetPathItem("GET", "Get all Sales Invoices", "Sales", "Retrieve all sales invoice records"),
-                ["/SalesInvoice/count"] = GetPathItem("GET", "Count Sales Invoices", "Sales", "Get total number of sales invoice records. Supports optional $filter for filtered counts"),
-                ["/SalesInvoice/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Sales Invoice", "Sales", "Retrieve a single sales invoice"),
+                ["/SalesInvoice/getAll"] = GetPathItem("GET", "Get all Sales Invoices", "Sales", "Retrieve all sales invoice records.\n\n**Extra Field:** `SourceDocNos` - comma-separated delivery order number(s) this invoice was transferred from (empty if created directly).\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression (e.g., DocNo eq 'IV-0001', SourceDocNos like '%DO-0001%')\n- $orderby: Sort field (e.g., DocNo desc)\n- $select: Field selection\n- $skip: Records to skip"),
+                ["/SalesInvoice/count"] = GetPathItem("GET", "Count Sales Invoices", "Sales", "Get total number of sales invoice records. Supports optional $filter for filtered counts (e.g., SourceDocNos like '%DO-0001%' to count invoices linked to a delivery order)"),
+                ["/SalesInvoice/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Sales Invoice", "Sales", "Retrieve a single sales invoice.\n\n**Extra Field:** `SourceDocNos` - comma-separated delivery order number(s) this invoice was transferred from (empty if created directly)"),
                 ["/SalesInvoice/getDetail/{docNo}"] = GetPathItem("GET", "Get Sales Invoice Details", "Sales", "Retrieve invoice with details"),
                 ["/SalesInvoice/add"] = GetPathItem("POST", "Add Sales Invoice", "Sales", "Create a new sales invoice\n\n**ON HOLD**: SDK/DB schema mismatch - 'WithholdingTaxVersion' column required by SDK but not in database. Awaiting resolution.", true, new {
                     docNo = "INV-00001",
@@ -386,6 +386,40 @@ namespace GCR_autocount_api
                     }
                 }),
                 ["/DeliveryOrder/delete/{docNo}"] = GetPathItem("DELETE", "Delete Delivery Order", "Sales", "Delete a delivery order"),
+
+                ["/DeliveryReturn/getAll"] = GetPathItem("GET", "Get all Delivery Returns", "Sales", "Retrieve all delivery return records"),
+                ["/DeliveryReturn/count"] = GetPathItem("GET", "Count Delivery Returns", "Sales", "Get total number of delivery return records. Supports optional $filter for filtered counts"),
+                ["/DeliveryReturn/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Delivery Return", "Sales", "Retrieve a single delivery return"),
+                ["/DeliveryReturn/getDetail/{docNo}"] = GetPathItem("GET", "Get Delivery Return Details", "Sales", "Retrieve delivery return with details"),
+                ["/DeliveryReturn/add"] = GetPathItem("POST", "Add Delivery Return", "Sales", "Create a new delivery return to reverse goods from a Delivery Order. This is the standard method to cancel/return items from a DO.\n\n**Stock Impact**: Stock is returned to inventory.\n\n**location is optional**: Omit to inherit the location from the source DO detail.", true, new {
+                    docNo = "DR-00001",
+                    debtorCode = "2200-T001",
+                    date = "2024-01-15",
+                    detailList = new[] {
+                        new {
+                            deliveryOrderNo = "DO-00001",
+                            itemCode = "FG00001",
+                            uom = "UNIT",
+                            quantity = 10,
+                            location = ""
+                        }
+                    }
+                }),
+                ["/DeliveryReturn/edit"] = GetPathItem("PUT", "Edit Delivery Return", "Sales", "Update an existing delivery return\n\n**location is optional**: Omit to inherit the location from the source DO detail.", true, new {
+                    docNo = "DR-00001",
+                    debtorCode = "2200-T001",
+                    date = "2024-01-15",
+                    detailList = new[] {
+                        new {
+                            deliveryOrderNo = "DO-00001",
+                            itemCode = "FG00001",
+                            uom = "UNIT",
+                            quantity = 10,
+                            location = ""
+                        }
+                    }
+                }),
+                ["/DeliveryReturn/delete/{docNo}"] = GetPathItem("DELETE", "Delete Delivery Return", "Sales", "Delete a delivery return"),
 
                 ["/CashSale/getAll"] = GetPathItem("GET", "Get all Cash Sales", "Sales", "Retrieve all cash sale records"),
                 ["/CashSale/count"] = GetPathItem("GET", "Count Cash Sales", "Sales", "Get total number of cash sale records. Supports optional $filter for filtered counts"),

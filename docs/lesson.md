@@ -1,5 +1,53 @@
 # Lessons Learned
 
+## 2026-08-05
+
+### DeliveryReturn optional location support
+- **Task**: Allow `location` per detail row on `/DeliveryReturn/add` and `/edit`; previously location was always inherited from the source DO
+- **Finding**: `PartialTransfer` has no location parameter, but `DeliveryReturnDetail.Location` is settable. Pattern: record `doc.DataTableDetail.Rows.Count` before `PartialTransfer`, then set `doc.EditDetail(dtlKey).Location` on the newly appended row before `Save()`
+- **Verified live**: override (`ASRS`) and inheritance (omit -> source DO `HQ`) both persist; `vDeliveryReturnDetail` also exposes `FromDocNo`/`FromDocType` (source DO link per detail row)
+- **Note**: DR numbering in this DB is `DR-000001` style; API date format is `dd-MM-yyyy` (Swagger examples showing `2024-01-15` are wrong)
+
+### MSB3027 recurred again (3rd time)
+- Same as 2026-08-04: killed `MyAutocount` per AGENTS.md, but the running server was `GCR-autocount-api` (PID 6720) locking the exe. AGENTS.md kill/start commands are still outdated - always use `GCR-autocount-api`
+
+## 2026-08-04
+
+### MSB3027 recurred - killed wrong process name
+- **Issue**: Release build failed with MSB3027/MSB3021 (exe locked) because only `MyAutocount` was killed per AGENTS.md, while the actual running server process is `GCR-autocount-api` (PID 2736)
+- **Fix**: `Stop-Process -Name GCR-autocount-api -Force` before build
+- **Lesson**: Same as 2026-08-03 "Build/run naming" entry - always kill `GCR-autocount-api`, not `MyAutocount`
+
+### ODataHelper.BuildQuery ignores customSelect
+- **Finding**: When any OData param ($top/$filter/$select/$orderby/$skip) is present, `ODataHelper.BuildQuery` rebuilds the SELECT itself (`*` or $select fields) and ignores the `customSelect` argument of `Sql.GetAllFromSql`
+- **Consequence**: Computed/joined columns added via `customSelect` silently disappear from `getAll` responses as soon as clients pass OData params
+- **Solution**: Put computed columns in `customFrom` instead (e.g. `CROSS APPLY (...) src`), so they survive `SELECT *`, `$select`, `$filter`, `$orderby`
+- **Applied**: SalesInvoice `SourceDocNos` (linked delivery orders) via `CROSS APPLY` over `DocTransfer` + `vDeliveryOrder`
+
+### Invoice<->DeliveryOrder link lives in DocTransfer
+- **Finding**: AutoCount 2.0 links transferred docs via table `DocTransfer` (FromDocType/FromDocKey -> ToDocType/ToDocKey, detail-level rows). No `DocSource` table exists. `vInvoice` has no source-doc columns; `vDeliveryOrder` only has a single `ToDocKey`/`ToDocType` pointer (unreliable for partial transfers to multiple invoices)
+- **Query**: invoice->DO: join `DocTransfer dt ON dt.ToDocKey = vInvoice.DocKey AND dt.ToDocType='IV'` then `vDeliveryOrder.DocKey = dt.FromDocKey`; use DISTINCT (multiple detail rows per doc pair)
+
+## 2026-08-03
+
+### Creditor/Debtor IsActive exposure
+- **Task**: Expose active status on `/Creditor/*` and `/Debtor/*` read endpoints
+- **Finding**: AutoCount views `vCreditor`/`vDebtor` do NOT include active status, but underlying `Creditor`/`Debtor` tables have `IsActive` char ('T'/'F'). Join key: `vCreditor.CreditorCode = Creditor.AccNo`, `vDebtor.DebtorCode = Debtor.AccNo`
+- **Implementation**: `Sql.GetAllFromSql`/`GetSingleFromSql`/`GetCountFromSql` and `ODataHelper.BuildQuery`/`BuildCountQuery` accept optional `customFrom`/`customSelect`; Creditor/Debtor modules pass `LEFT JOIN` to the base table selecting `v.*, c.IsActive`
+- **Side benefit**: `$filter=IsActive eq 'T'` works on getAll/count
+- **Note**: add/edit do NOT set IsActive (read-only exposure); SDK entities have `IsActive` if write support is needed later
+
+### Creditor e2e false-positive PASS (MaxLength again)
+- **Issue**: `Creditor getSingle IsActive` check failed because the creditor was never created
+- **Root cause**: `$testCreditorCode = "3100-Test$timestamp"` = 23 chars > `AccNo` MaxLength (20). Add failed with "Cannot set column 'AccNo'. The value violates the MaxLength limit", but Creditor routes return exceptions as HTTP 200 strings, so `Test-ApiEndpoint` reported PASS for add/edit/delete (false positives)
+- **Fix**: Shortened to `"3100-T$($timestamp.Substring(10))"` (same convention as Debtor/SalesAgent/StockGroup)
+- **Lesson**: Same MaxLength trap as 2026-04-28 entry. Keep generated codes short. Beware: API errors returned as 200 strings make e2e PASS unreliable; field-presence checks can surface these hidden failures
+
+### Build/run naming (AGENTS.md outdated)
+- Solution file is `GCR-autocount-api.sln` (not `MyAutocount.sln`)
+- Built exe is `MyAutocount\bin\Release\net48\GCR-autocount-api.exe`; process name to kill is `GCR-autocount-api` (not `MyAutocount`)
+- Killing only `MyAutocount` leaves the old server running and locks the exe during build (MSB3027)
+
 ## 2026-04-29
 
 ### SalesInvoice POST - API Design
@@ -81,3 +129,12 @@
 - **Recommendation**: 
   1. Run AutoCount database migration tool to upgrade database schema
   2. Or downgrade SDK to version matching database schema
+
+### GoodsReceivedNote date field name mismatch (RuntimeBinderException)
+- **Issue**: POST /GoodsReceivedNote/add threw `RuntimeBinderException: Cannot perform runtime binding on a null reference` at GoodsReceivedNote.cs:89
+- **Root cause**: GRN module read `data.docDate`, but the API payload (and Swagger docs) use `date`. Missing JObject property returns null, and `.ToString()` on null throws the binder exception.
+- **Convention**: Every other doctype reads the date field as `data.date` / `data[Constants.Date]` (e.g. DeliveryOrder.cs:188, PurchaseOrder.cs:250). GRN was the only outlier using `docDate`.
+- **Fix**: Changed GoodsReceivedNote.cs Add (line 89) and Edit (line 133) to read `data.date`.
+- **Date format**: `DateStringToDateTime` (Utils.cs:71) expects `dd-MM-yyyy`. Payload date must match (e.g. `15-01-2026`), and must fall within the company fiscal year.
+- **Verified**: Build OK; live POST created GRN `GR3-26-01-001` then deleted it.
+- **Status**: FIXED

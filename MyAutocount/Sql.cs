@@ -17,27 +17,31 @@ namespace GCR_autocount_api
             return Utils.DataTableToJsonString(table);
         }
 
-        public static string GetAllFromSql(AutoCount.Authentication.UserSession userSession, string tableName, Request request = null)
+        public static string GetAllFromSql(AutoCount.Authentication.UserSession userSession, string tableName, Request request = null, string customFrom = null, string customSelect = null)
         {
             string dbName = userSession.DBSetting.DBName;
+            string selectClause = string.IsNullOrEmpty(customSelect) ? "*" : customSelect;
+            string fromSource = string.IsNullOrEmpty(customFrom) ? "[" + dbName + "].[dbo].[" + tableName + "]" : customFrom;
 
             if (request != null && ODataHelper.HasODataParams(request))
             {
-                string odataQuery = ODataHelper.BuildQuery("SELECT * FROM [" + dbName + "].[dbo].[" + tableName + "]", request, tableName, dbName);
+                string odataQuery = ODataHelper.BuildQuery("SELECT " + selectClause + " FROM " + fromSource, request, tableName, dbName, customFrom);
                 DataTable table1 = userSession.DBSetting.GetDataTable(odataQuery, false);
                 return Utils.DataTableToJsonString(table1);
             }
 
             // Default limit to prevent returning too many records
-            string query = "SELECT TOP(5) * FROM [" + dbName + "].[dbo].[" + tableName + "]";
+            string query = "SELECT TOP(5) " + selectClause + " FROM " + fromSource;
             DataTable table2 = userSession.DBSetting.GetDataTable(query, false);
             return Utils.DataTableToJsonString(table2);
         }
 
-        public static string GetSingleFromSql(AutoCount.Authentication.UserSession userSession, string tableName, string keyName, string key)
+        public static string GetSingleFromSql(AutoCount.Authentication.UserSession userSession, string tableName, string keyName, string key, string customFrom = null, string customSelect = null)
         {
             string dbName = userSession.DBSetting.DBName;
-            string query = "SELECT * FROM [" + dbName + "].[dbo].[" + tableName + "] WHERE " + keyName + " = @" + keyName;
+            string selectClause = string.IsNullOrEmpty(customSelect) ? "*" : customSelect;
+            string fromSource = string.IsNullOrEmpty(customFrom) ? "[" + dbName + "].[dbo].[" + tableName + "]" : customFrom;
+            string query = "SELECT " + selectClause + " FROM " + fromSource + " WHERE " + keyName + " = @" + keyName;
             DataTable result = userSession.DBSetting.GetDataTable(query, false, new object[] {
                 new SqlParameter(keyName, key),
             });
@@ -63,10 +67,10 @@ namespace GCR_autocount_api
             return Utils.DataTableToJsonString(table);
         }
 
-        public static string GetCountFromSql(AutoCount.Authentication.UserSession userSession, string tableName, Request request = null)
+        public static string GetCountFromSql(AutoCount.Authentication.UserSession userSession, string tableName, Request request = null, string customFrom = null)
         {
             string dbName = userSession.DBSetting.DBName;
-            string countQuery = ODataHelper.BuildCountQuery(request, tableName, dbName);
+            string countQuery = ODataHelper.BuildCountQuery(request, tableName, dbName, customFrom);
             DataTable table = userSession.DBSetting.GetDataTable(countQuery, false);
             long count = table.Rows.Count > 0 ? Convert.ToInt64(table.Rows[0][0]) : 0;
             return Newtonsoft.Json.JsonConvert.SerializeObject(new { count });

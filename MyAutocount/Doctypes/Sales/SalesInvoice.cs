@@ -21,6 +21,20 @@ namespace GCR_autocount_api.Doctypes.Sales
         AutoCount.Data.DBSetting dbSetting;
         AutoCount.Authentication.UserSession userSession;
 
+        private string FromWithSourceDoc
+        {
+            get
+            {
+                string dbName = dbSetting.DBName;
+                return "[" + dbName + "].[dbo].[" + DatabaseTable + "] i " +
+                    "CROSS APPLY (SELECT STUFF((SELECT DISTINCT ', ' + d.DocNo " +
+                    "FROM [" + dbName + "].[dbo].[DocTransfer] dt " +
+                    "INNER JOIN [" + dbName + "].[dbo].[vDeliveryOrder] d ON d.DocKey = dt.FromDocKey " +
+                    "WHERE dt.ToDocKey = i.DocKey AND dt.FromDocType = 'DO' " +
+                    "FOR XML PATH('')), 1, 2, '') AS SourceDocNos) src";
+            }
+        }
+
         public SalesInvoice()
         {
             dbSetting = Auth.dbSetting;
@@ -34,7 +48,7 @@ namespace GCR_autocount_api.Doctypes.Sales
             {
                 try
                 {
-                    Response response = GetAll();
+                    Response response = GetAll(this.Request);
                     return response;
                 }
                 catch (Exception ex)
@@ -129,7 +143,7 @@ namespace GCR_autocount_api.Doctypes.Sales
             {
                 try
                 {
-                    return Sql.GetCountFromSql(userSession, DatabaseTable, this.Request);
+                    return Sql.GetCountFromSql(userSession, DatabaseTable, this.Request, FromWithSourceDoc);
                 }
                 catch (Exception ex)
                 {
@@ -141,14 +155,14 @@ namespace GCR_autocount_api.Doctypes.Sales
             });
         }
 
-        private string GetAll()
+        private string GetAll(Request request = null)
         {
-            return Sql.GetAllFromSql(userSession, DatabaseTable);
+            return Sql.GetAllFromSql(userSession, DatabaseTable, request, FromWithSourceDoc);
         }
 
         private string GetSingle(string docNo)
         {
-            return Sql.GetSingleFromSql(userSession, DatabaseTable, PrimaryKey, docNo);
+            return Sql.GetSingleFromSql(userSession, DatabaseTable, PrimaryKey, docNo, FromWithSourceDoc);
         }
 
         private string GetSingleDetail(string docNo)

@@ -19,6 +19,18 @@ namespace GCR_autocount_api.Doctypes.Purchase
         AutoCount.Data.DBSetting dbSetting;
         AutoCount.Authentication.UserSession userSession;
 
+        private string SelectWithActive => "v.*, c.IsActive";
+
+        private string FromWithActive
+        {
+            get
+            {
+                string dbName = dbSetting.DBName;
+                return "[" + dbName + "].[dbo].[" + DatabaseTable + "] v " +
+                    "LEFT JOIN [" + dbName + "].[dbo].[Creditor] c ON c.AccNo = v.CreditorCode";
+            }
+        }
+
         public Creditor()
         {
             dbSetting = Auth.dbSetting;
@@ -37,7 +49,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
             Get($"/{DoctypeName}/getAll", _ => {
                 try
                 {
-                    return GetAll();
+                    return GetAll(this.Request);
                 }
                 catch (Exception ex)
                 {
@@ -100,7 +112,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
             {
                 try
                 {
-                    return Sql.GetCountFromSql(userSession, DatabaseTable, this.Request);
+                    return Sql.GetCountFromSql(userSession, DatabaseTable, this.Request, FromWithActive);
                 }
                 catch (Exception ex)
                 {
@@ -114,14 +126,14 @@ namespace GCR_autocount_api.Doctypes.Purchase
 
         }
 
-        private string GetAll()
+        private string GetAll(Request request = null)
         {
-            return Sql.GetAllFromSql(userSession, DatabaseTable);
+            return Sql.GetAllFromSql(userSession, DatabaseTable, request, FromWithActive, SelectWithActive);
 
         }
         private string GetSingle(string creditorCode)
         {
-            return Sql.GetSingleFromSql(userSession, DatabaseTable, PrimaryKey, creditorCode);
+            return Sql.GetSingleFromSql(userSession, DatabaseTable, PrimaryKey, creditorCode, FromWithActive, SelectWithActive);
         }
 
         private string Add(dynamic data)
