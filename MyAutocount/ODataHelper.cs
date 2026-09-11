@@ -8,7 +8,7 @@ namespace GCR_autocount_api
 {
     public class ODataHelper
     {
-        private const int DefaultRows = 5;
+        private const int DefaultRows = 100;
         private const int MaxRows = 1000;
 
         public static string BuildQuery(string baseQuery, Nancy.Request request, string tableName, string dbName, string customFrom = null)
@@ -99,6 +99,9 @@ namespace GCR_autocount_api
 
         private static string ParseFilter(string filter)
         {
+            // Handle OData string functions first
+            filter = HandleODataFunctions(filter);
+            
             // Simple filter parser for common operations
             // Supports: eq, ne, gt, lt, ge, le, and, or
             // Example: $filter=DocNo eq 'SO-0001' and DocDate gt '2024-01-01'
@@ -108,8 +111,35 @@ namespace GCR_autocount_api
             filter = filter.Replace(" ge ", " >= ").Replace(" le ", " <= ");
             filter = filter.Replace(" and ", " AND ").Replace(" or ", " OR ");
 
-            // Handle string values (single quotes)
-            // This is a simplified version - production would need more robust parsing
+            return filter;
+        }
+
+        private static string HandleODataFunctions(string filter)
+        {
+            // Handle contains(Column,'value') -> Column LIKE '%value%'
+            filter = System.Text.RegularExpressions.Regex.Replace(
+                filter,
+                @"contains\(([^,]+),'([^']*)'\)",
+                match => $"{match.Groups[1].Value} LIKE '%{match.Groups[2].Value}%'",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+
+            // Handle startswith(Column,'value') -> Column LIKE 'value%'
+            filter = System.Text.RegularExpressions.Regex.Replace(
+                filter,
+                @"startswith\(([^,]+),'([^']*)'\)",
+                match => $"{match.Groups[1].Value} LIKE '{match.Groups[2].Value}%'",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+
+            // Handle endswith(Column,'value') -> Column LIKE '%value'
+            filter = System.Text.RegularExpressions.Regex.Replace(
+                filter,
+                @"endswith\(([^,]+),'([^']*)'\)",
+                match => $"{match.Groups[1].Value} LIKE '%{match.Groups[2].Value}'",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+
             return filter;
         }
 

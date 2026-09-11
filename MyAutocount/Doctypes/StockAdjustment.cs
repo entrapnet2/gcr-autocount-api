@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Nancy;
 using Nancy.Extensions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static GCR_autocount_api.Utils;
 
 namespace GCR_autocount_api.Doctypes
@@ -100,11 +101,13 @@ namespace GCR_autocount_api.Doctypes
 
                 foreach (dynamic detailObject in detailList)
                 {
+                    string location = detailObject.location?.ToString();
                     detailObjectsList.Add(new StockAdjustmentDetailObject(
                         detailObject.itemCode.ToString(),
                         detailObject.uom.ToString(),
                         decimal.Parse(detailObject.quantity.ToString()),
-                        decimal.Parse(detailObject.unitCost.ToString())
+                        decimal.Parse(detailObject.unitCost.ToString()),
+                        location
                         ));
                 }
 
@@ -137,11 +140,13 @@ namespace GCR_autocount_api.Doctypes
 
                 foreach (dynamic detailObject in detailList)
                 {
+                    string location = detailObject.location?.ToString();
                     detailObjectsList.Add(new StockAdjustmentDetailObject(
                         detailObject.itemCode.ToString(),
                         detailObject.uom.ToString(),
                         decimal.Parse(detailObject.quantity.ToString()),
-                        decimal.Parse(detailObject.unitCost.ToString())
+                        decimal.Parse(detailObject.unitCost.ToString()),
+                        location
                         ));
                 }
 
@@ -231,6 +236,8 @@ namespace GCR_autocount_api.Doctypes
                     detail.UOM = detailObject.UOM;
                     detail.Qty = detailObject.Qty;
                     detail.UnitCost = detailObject.UnitCost;
+                    if (detailObject.Location != null)
+                        detail.Location = detailObject.Location;
                 }
 
                 doc.Save();
@@ -269,6 +276,8 @@ namespace GCR_autocount_api.Doctypes
                     detail.UOM = detailObject.UOM;
                     detail.Qty = detailObject.Qty;
                     detail.UnitCost = detailObject.UnitCost;
+                    if (detailObject.Location != null)
+                        detail.Location = detailObject.Location;
                 }
 
                 doc.Save();
@@ -305,13 +314,15 @@ namespace GCR_autocount_api.Doctypes
         public string UOM { get; set; }         // mandatory
         public decimal Qty { get; set; }
         public decimal UnitCost { get; set; }
+        public string Location { get; set; }
 
-        public StockAdjustmentDetailObject(string itemCode, string uom, decimal quantity = 0M, decimal unitCost = 0M)
+        public StockAdjustmentDetailObject(string itemCode, string uom, decimal quantity = 0M, decimal unitCost = 0M, string location = null)
         {
             this.ItemCode = itemCode;
             this.UOM = uom;
             this.Qty = quantity;
             this.UnitCost = unitCost;
+            this.Location = location;
         }
 
     }

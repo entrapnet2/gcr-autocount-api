@@ -138,3 +138,11 @@
 - **Date format**: `DateStringToDateTime` (Utils.cs:71) expects `dd-MM-yyyy`. Payload date must match (e.g. `15-01-2026`), and must fall within the company fiscal year.
 - **Verified**: Build OK; live POST created GRN `GR3-26-01-001` then deleted it.
 - **Status**: FIXED
+
+### DocNoFormat API and GRN docNoFormatName support
+- **Feature**: Added `GET /DocNoFormat/getDocTypes` and `GET /DocNoFormat/getAll` (with OData support) endpoints for listing available document number format options. Added `docNoFormatName` parameter to `POST /GoodsReceivedNote/add` to create GRN using a specific DocNo format.
+- **Key finding**: AutoCount doc type code for GRN is `GR` (not `GRN`). The format `Name` field (e.g., "GRN-PLAS", "GRN-PACK", "GRN-OTHER") is the `docNoFormatName` value used in the SDK's `doc.DocNoFormatName` property.
+- **Database table**: `DocNoFormat` table contains columns: `Name`, `DocType`, `IsDefault`, `Format`, `Sample`, `NextNumber`, `OneMonthOneSet`, `MaxNumber`.
+- **SDK approach**: `DocumentNumber` class constructor is internal (not publicly accessible). Instead, use the `doc.DocNoFormatName` property on the document object (e.g., `AutoCount.Invoicing.Purchase.GoodsReceivedNote.GoodsReceivedNote.DocNoFormatName`), which is public and writable. AutoCount handles number generation and counter increment automatically.
+- **Tested**: Created GRN with `docNoFormatName: "GRN-PLAS"` → got `GR1-26-08-002`, `docNoFormatName: "GRN-PACK"` → got `GR2-26-08-002`, without docNoFormatName → got default `GR3-26-08-040`. All deleted after test.
+- **Status**: COMPLETED

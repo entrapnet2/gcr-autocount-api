@@ -201,8 +201,8 @@ namespace GCR_autocount_api.Doctypes.Sales
                         detail.UnitPrice = decimal.Parse(detailObject.unitPrice.ToString());
                         detail.Discount = detailObject.discount.ToString();
                         
-                        if (detailObject.location != null)
-                            detail.Location = detailObject.location.ToString();
+                        if (detailObject[DeliveryOrderConstants.Location] != null)
+                            detail.Location = detailObject[DeliveryOrderConstants.Location].ToString();
                     }
                 }
 

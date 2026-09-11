@@ -89,6 +89,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
             DateTime docDate = DateStringToDateTime(data.date.ToString());
             string creditorCode = data.creditorCode;
             string description = ((JObject)data).ContainsKey("description") ? data.description : "";
+            string docNoFormatName = ((JObject)data).ContainsKey("docNoFormatName") ? data.docNoFormatName?.ToString() : "";
 
             var cmd = AutoCount.Invoicing.Purchase.GoodsReceivedNote.GoodsReceivedNoteCommand.Create(userSession, userSession.DBSetting);
             var doc = cmd.AddNew();
@@ -96,6 +97,10 @@ namespace GCR_autocount_api.Doctypes.Purchase
             if (!string.IsNullOrEmpty(docNo?.ToString()))
             {
                 doc.DocNo = docNo;
+            }
+            else if (!string.IsNullOrEmpty(docNoFormatName))
+            {
+                doc.DocNoFormatName = docNoFormatName;
             }
             doc.DocDate = docDate;
             doc.CreditorCode = creditorCode;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Nancy;
 using Nancy.Extensions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static GCR_autocount_api.Utils;
 
 namespace GCR_autocount_api.Doctypes.Stock

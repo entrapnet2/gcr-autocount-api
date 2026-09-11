@@ -337,7 +337,7 @@ namespace GCR_autocount_api
                 ["/SalesInvoice/add"] = GetPathItem("POST", "Add Sales Invoice", "Sales", "Create a new sales invoice\n\n**ON HOLD**: SDK/DB schema mismatch - 'WithholdingTaxVersion' column required by SDK but not in database. Awaiting resolution.", true, new {
                     docNo = "INV-00001",
                     debtorCode = "2200-J001",
-                    date = "2024-01-15",
+                    date = "15-01-2024",
                     shipInfo = "Deliver to customer address",
                     detailList = new[] {
                         new {
@@ -358,7 +358,7 @@ namespace GCR_autocount_api
                 ["/DeliveryOrder/add"] = GetPathItem("POST", "Add Delivery Order", "Sales", "Create a new delivery order\n\n**docNo is optional**: Omit or pass null/empty to let AutoCount auto-generate the running number.", true, new {
                     docNo = "",
                     debtorCode = "2200-T001",
-                    date = "2024-01-15",
+                    date = "15-01-2024",
                     shipInfo = "Deliver to customer address",
                     detailList = new[] {
                         new {
@@ -373,7 +373,7 @@ namespace GCR_autocount_api
                 ["/DeliveryOrder/edit"] = GetPathItem("PUT", "Edit Delivery Order", "Sales", "Update an existing delivery order", true, new {
                     docNo = "DO-00001",
                     debtorCode = "2200-T001",
-                    date = "2024-01-15",
+                    date = "15-01-2024",
                     shipInfo = "Deliver to customer address",
                     detailList = new[] {
                         new {
@@ -394,7 +394,7 @@ namespace GCR_autocount_api
                 ["/DeliveryReturn/add"] = GetPathItem("POST", "Add Delivery Return", "Sales", "Create a new delivery return to reverse goods from a Delivery Order. This is the standard method to cancel/return items from a DO.\n\n**Stock Impact**: Stock is returned to inventory.\n\n**location is optional**: Omit to inherit the location from the source DO detail.", true, new {
                     docNo = "DR-00001",
                     debtorCode = "2200-T001",
-                    date = "2024-01-15",
+                    date = "15-01-2024",
                     detailList = new[] {
                         new {
                             deliveryOrderNo = "DO-00001",
@@ -408,7 +408,7 @@ namespace GCR_autocount_api
                 ["/DeliveryReturn/edit"] = GetPathItem("PUT", "Edit Delivery Return", "Sales", "Update an existing delivery return\n\n**location is optional**: Omit to inherit the location from the source DO detail.", true, new {
                     docNo = "DR-00001",
                     debtorCode = "2200-T001",
-                    date = "2024-01-15",
+                    date = "15-01-2024",
                     detailList = new[] {
                         new {
                             deliveryOrderNo = "DO-00001",
@@ -489,22 +489,21 @@ namespace GCR_autocount_api
                 ["/GoodsReceivedNote/getAll"] = GetPathItem("GET", "Get all Goods Received Notes", "Purchase", "Retrieve all GRN records"),
                 ["/GoodsReceivedNote/count"] = GetPathItem("GET", "Count Goods Received Notes", "Purchase", "Get total number of GRN records. Supports optional $filter for filtered counts"),
                 ["/GoodsReceivedNote/getSingle/{docNo}"] = GetPathItem("GET", "Get Single GRN", "Purchase", "Retrieve a single GRN"),
-                ["/GoodsReceivedNote/add"] = GetPathItem("POST", "Add Goods Received Note", "Purchase", "Create a new GRN", true, new {
-                    docNo = "GRN-00001",
+                ["/GoodsReceivedNote/add"] = GetPathItem("POST", "Add Goods Received Note", "Purchase", "Create a new GRN\n\n**docNo** is optional: Omit or pass null/empty to let AutoCount auto-generate the running number.\n\n**docNoFormatName** is optional: Pass a format name (e.g., \"GRN-PLAS\") from `/DocNoFormat/getAll` to use a specific DocNo format instead of the default. If both `docNo` and `docNoFormatName` are provided, `docNo` takes precedence.\n\n**location** is optional: Add location to each detail line. Omit to use default location.", true, new {
+                    docNo = "",
+                    docNoFormatName = "GRN-OTHER",
                     creditorCode = "400-S001",
-                    date = "2024-01-15",
-                    shipInfo = "Delivered to HQ",
+                    date = "15-01-2024",
                     detailList = new[] {
-                        new { itemCode = "RM00001", uom = "UNIT", quantity = 100, unitPrice = 10.50 }
+                        new { itemCode = "RM00001", uom = "UNIT", quantity = 100, unitPrice = 10.50, location = "HQ" }
                     }
                 }),
                 ["/GoodsReceivedNote/edit"] = GetPathItem("PUT", "Edit Goods Received Note", "Purchase", "Update an existing GRN", true, new {
-                    docNo = "GRN-00001",
+                    docNo = "GR3-26-01-001",
                     creditorCode = "400-S001",
-                    date = "2024-01-15",
-                    shipInfo = "Delivered to Warehouse B",
+                    date = "15-01-2024",
                     detailList = new[] {
-                        new { itemCode = "RM00001", uom = "UNIT", quantity = 150, unitPrice = 10.50 }
+                        new { itemCode = "RM00001", uom = "UNIT", quantity = 150, unitPrice = 10.50, location = "HQ" }
                     }
                 }),
                 ["/GoodsReceivedNote/delete/{docNo}"] = GetPathItem("DELETE", "Delete Goods Received Note", "Purchase", "Delete a GRN"),
@@ -516,18 +515,18 @@ namespace GCR_autocount_api
                 ["/StockAdjustment/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Stock Adjustment", "Stock Transactions", "Retrieve a single stock adjustment"),
                 ["/StockAdjustment/add"] = GetPathItem("POST", "Add Stock Adjustment", "Stock Transactions", "Create a new stock adjustment", true, new {
                     docNo = "SA-00001",
-                    docDate = "2024-01-15",
+                    docDate = "15-01-2024",
                     description = "Stock Adjustment entry",
                     detailList = new[] {
-                        new { itemCode = "FG00001", uom = "UNIT", quantity = 10, unitCost = 5.00 }
+                        new { itemCode = "FG00001", uom = "UNIT", quantity = 10, unitCost = 5.00, location = "DEFAULT" }
                     }
                 }),
                 ["/StockAdjustment/edit"] = GetPathItem("PUT", "Edit Stock Adjustment", "Stock Transactions", "Update an existing stock adjustment", true, new {
                     docNo = "SA-00001",
-                    docDate = "2024-01-15",
+                    docDate = "15-01-2024",
                     description = "Stock Adjustment entry updated",
                     detailList = new[] {
-                        new { itemCode = "FG00001", uom = "UNIT", quantity = 15, unitCost = 5.00 }
+                        new { itemCode = "FG00001", uom = "UNIT", quantity = 15, unitCost = 5.00, location = "DEFAULT" }
                     }
                 }),
                 ["/StockAdjustment/delete/{docNo}"] = GetPathItem("DELETE", "Delete Stock Adjustment", "Stock Transactions", "Delete a stock adjustment"),
@@ -538,7 +537,7 @@ namespace GCR_autocount_api
                 ["/StockTransfer/getDetail/{docNo}"] = GetPathItem("GET", "Get Stock Transfer Details", "Stock Transactions", "Retrieve transfer with details"),
                 ["/StockTransfer/add"] = GetPathItem("POST", "Add Stock Transfer", "Stock Transactions", "Create a new stock transfer", true, new {
                     docNo = "TR-00001",
-                    docDate = "2024-01-15",
+                    docDate = "15-01-2024",
                     fromLocation = "HQ",
                     toLocation = "BRANCH1",
                     reason = "Restock",
@@ -548,7 +547,7 @@ namespace GCR_autocount_api
                 }),
                 ["/StockTransfer/edit"] = GetPathItem("PUT", "Edit Stock Transfer", "Stock Transactions", "Update an existing stock transfer", true, new {
                     docNo = "TR-00001",
-                    docDate = "2024-01-15",
+                    docDate = "15-01-2024",
                     fromLocation = "HQ",
                     toLocation = "BRANCH1",
                     reason = "Restock Updated",
@@ -609,7 +608,7 @@ namespace GCR_autocount_api
                 ["/StockReceive/count"] = GetPathItem("GET", "Count Stock Receive", "Stock Transactions", "Get total number of stock receive records. Supports optional $filter for filtered counts"),
                 ["/StockReceive/add"] = GetPathItem("POST", "Add Stock Receive", "Stock Transactions", "Create a new stock receive", true, new {
                     docNo = "SR-00001",
-                    docDate = "2024-01-15",
+                    docDate = "15-01-2024",
                     description = "Receive missing items",
                     detailList = new[] {
                         new { itemCode = "FG00001", uom = "UNIT", quantity = 10, unitCost = 5.00 }
@@ -620,7 +619,7 @@ namespace GCR_autocount_api
                 ["/StockIssue/count"] = GetPathItem("GET", "Count Stock Issue", "Stock Transactions", "Get total number of stock issue records. Supports optional $filter for filtered counts"),
                 ["/StockIssue/add"] = GetPathItem("POST", "Add Stock Issue", "Stock Transactions", "Create a new stock issue", true, new {
                     docNo = "SI-00001",
-                    docDate = "2024-01-15",
+                    docDate = "15-01-2024",
                     description = "Issue items for marketing",
                     detailList = new[] {
                         new { itemCode = "FG00001", uom = "UNIT", quantity = 5 }
@@ -648,6 +647,12 @@ namespace GCR_autocount_api
                         new { itemCode = "FG00001", uom = "UNIT", quantity = 95 }
                     }
                 }),
+                #endregion
+
+                #region DocNo Format
+                ["/DocNoFormat/getDocTypes"] = GetPathItem("GET", "Get DocNo Format Doc Types", "DocNo Format", "List all document types that support DocNo formatting.\n\nEach entry contains a `code` (used as filter in `/DocNoFormat/getAll`) and a `name` (human-readable description)."),
+                ["/DocNoFormat/getAll"] = GetPathItem("GET", "Get All DocNo Formats", "DocNo Format", "Retrieve all DocNo format records.\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression (e.g., DocType eq 'GR' for GRN formats)\n- $orderby: Sort field (e.g., DocType asc)\n- $select: Field selection\n- $skip: Records to skip\n\n**Key fields:** `Name` (format name, used as `docNoFormatName` in document creation), `DocType` (document type code), `IsDefault` (T/F), `Format` (format pattern), `Sample` (example output)"),
+                ["/DocNoFormat/count"] = GetPathItem("GET", "Count DocNo Formats", "DocNo Format", "Get total number of DocNo format records. Supports optional $filter for filtered counts"),
                 #endregion
 
                 #region Database
@@ -788,7 +793,8 @@ namespace GCR_autocount_api
                 ["StockAssembly"] = new[] { "DocNo", "DocDate", "Total", "Status" },
                 ["SalesAgent"] = new[] { "AgentCode", "AgentName", "Phone", "Email" },
                 ["StockLocation"] = new[] { "Location", "Description", "Address1", "Phone1", "Contact" },
-                ["JournalEntry"] = new[] { "DocNo", "DocDate", "Description", "TotalDebit", "TotalCredit" }
+                ["JournalEntry"] = new[] { "DocNo", "DocDate", "Description", "TotalDebit", "TotalCredit" },
+                ["DocNoFormat"] = new[] { "Name", "DocType", "IsDefault", "Format", "Sample", "NextNumber" }
             };
 
             if (fields.ContainsKey(tag))
