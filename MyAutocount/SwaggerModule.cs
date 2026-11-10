@@ -85,7 +85,7 @@ namespace GCR_autocount_api
 <html>
 <head>
     <title>GCR AutoCount Sync - Swagger UI</title>
-    <link rel=""stylesheet"" type=""text/css"" href=""http://localhost:8888/swagger-ui.css"">
+    <link rel=""stylesheet"" type=""text/css"" href=""/swagger-ui.css"">
     <style>
         body { margin: 0; padding: 0; }
         .swagger-ui .topbar { display: none; }
@@ -94,12 +94,12 @@ namespace GCR_autocount_api
 </head>
 <body>
     <div id=""swagger-ui""></div>
-    <script src=""http://localhost:8888/swagger-ui-bundle.js""></script>
-    <script src=""http://localhost:8888/swagger-ui-standalone-preset.js""></script>
+    <script src=""/swagger-ui-bundle.js""></script>
+    <script src=""/swagger-ui-standalone-preset.js""></script>
     <script>
         window.onload = function() {
             window.ui = SwaggerUIBundle({
-                url: 'http://localhost:8888/swagger/spec',
+                url: window.location.origin + '/swagger/spec',
                 dom_id: '#swagger-ui',
                 deepLinking: true,
                 presets: [
@@ -127,7 +127,7 @@ namespace GCR_autocount_api
                     version = "1.0.0",
                     description = "REST API for AutoCount ERP\n\n**How to use:**\n1. POST /login with username/password to get JWT token\n2. Click 'Authorize' button at top right\n3. Enter token as: Bearer <your-token>\n4. Now you can test all endpoints"
                 },
-                servers = new[] { new { url = $@"http://{Auth.ipAddress}:{Auth.port}" } },
+                servers = new[] { new { url = "/" } },
                 components = new
                 {
                     securitySchemes = new Dictionary<string, object>
