@@ -530,6 +530,13 @@ Write-Host "   $($result.Status): GET /Debtor/ageing" -ForegroundColor $(if($res
 $result = Test-ApiEndpoint -Name "GET Debtor/ageing with debtorCode" -Method Get -Endpoint "/Debtor/ageing?debtorCode=2200-T001" -Headers $headers
 Write-Host "   $($result.Status): GET /Debtor/ageing?debtorCode=2200-T001" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
 
+Write-Host "`n12. Testing CashBook (read)..." -ForegroundColor Yellow
+
+foreach ($ep in @("/CashBook/getAll", "/CashBook/count")) {
+    $result = Test-ApiEndpoint -Name "GET $ep" -Method Get -Endpoint $ep -Headers $headers
+    Write-Host "   $($result.Status): GET $ep" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+}
+
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "TEST SUMMARY" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan

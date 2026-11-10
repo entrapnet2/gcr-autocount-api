@@ -32,4 +32,23 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <!-- Auto-stamp assembly version from latest git tag (e.g. v1.0.3).
+       Skipped when -p:Version=... is passed explicitly (CI uses that).
+       SDK default Version is 1.0.0, so any other value means explicit.
+       Tags are always x.y.z (enforced by release workflow); .0 is appended
+       for the 4-part AssemblyVersion/FileVersion. -->
+  <Target Name="SetVersionFromGitTag" BeforeTargets="GetAssemblyAttributes" Condition="'$(Version)' == '1.0.0'">
+    <Exec Command="git describe --tags --abbrev=0" ConsoleToMSBuild="true" IgnoreExitCode="true" StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitTagRaw" />
+    </Exec>
+    <PropertyGroup>
+      <GitTagClean>$([System.String]::Copy('$(GitTagRaw)').Trim().TrimStart('v'))</GitTagClean>
+      <GitTagClean Condition="'$(GitTagClean)' == ''">1.0.0</GitTagClean>
+      <AssemblyVersion>$(GitTagClean).0</AssemblyVersion>
+      <FileVersion>$(GitTagClean).0</FileVersion>
+      <InformationalVersion>$(GitTagClean)</InformationalVersion>
+    </PropertyGroup>
+    <Message Text="Assembly version from git tag: $(GitTagClean)" Importance="high" />
+  </Target>
 </Project>

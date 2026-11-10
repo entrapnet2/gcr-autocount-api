@@ -169,6 +169,8 @@ namespace GCR_autocount_api
                     success = true,
                     currentDatabaseName = current,
                     currentCompanyName = Auth.CurrentCompanyName,
+                    dmfFolder = Auth.CurrentDmfFolder,
+                    dmfFiles = Auth.CurrentDmfFiles,
                     count = result.Length,
                     projects = result
                 });

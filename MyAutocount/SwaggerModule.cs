@@ -689,6 +689,39 @@ namespace GCR_autocount_api
                 ["/DocNoFormat/count"] = GetPathItem("GET", "Count DocNo Formats", "DocNo Format", "Get total number of DocNo format records. Supports optional $filter for filtered counts"),
                 #endregion
 
+                #region Cash Book
+                ["/CashBook/getAll"] = GetPathItem("GET", "Get all Cash Book Vouchers", "Cash Book", "Retrieve all cash book vouchers (payments and receipts)"),
+                ["/CashBook/count"] = GetPathItem("GET", "Count Cash Book Vouchers", "Cash Book", "Get total number of cash book vouchers. Supports optional $filter for filtered counts"),
+                ["/CashBook/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Cash Book Voucher", "Cash Book", "Retrieve a single cash book voucher"),
+                ["/CashBook/getDetail/{docNo}"] = GetPathItem("GET", "Get Cash Book Details", "Cash Book", "Retrieve voucher with GL detail lines"),
+                ["/CashBook/add"] = GetPathItem("POST", "Add Cash Book Voucher", "Cash Book", "Create a cash payment or cash receipt voucher (direct GL posting, no knock-off).\n\n**type**: `payment` (default) or `receipt`.\n\n**docNo is optional**: omit to auto-generate. NOTE: auto-generated receipt numbers contain `/` (e.g. `P/OR-26-11-001`) which breaks URL routes — for receipts, supply your own `docNo` without slashes.", true, new {
+                    type = "payment",
+                    docNo = "PV-00001",
+                    date = "15-01-2024",
+                    payTo = "TNB",
+                    description = "Electricity bill",
+                    payments = new[] {
+                        new { paymentMethod = "CASH", paymentAmount = 100.00, chequeNo = "", bankCharge = 0.00 }
+                    },
+                    details = new[] {
+                        new { accNo = "9100-0000", description = "Electricity bill", amount = 100.00, taxCode = "", inclusiveTax = false }
+                    }
+                }),
+                ["/CashBook/edit"] = GetPathItem("PUT", "Edit Cash Book Voucher", "Cash Book", "Update an existing cash book voucher (header + lines replaced)", true, new {
+                    docNo = "PV-00001",
+                    date = "15-01-2024",
+                    payTo = "TNB Updated",
+                    description = "Electricity bill updated",
+                    payments = new[] {
+                        new { paymentMethod = "CASH", paymentAmount = 120.00 }
+                    },
+                    details = new[] {
+                        new { accNo = "9100-0000", description = "Electricity bill", amount = 120.00 }
+                    }
+                }),
+                ["/CashBook/delete/{docNo}"] = GetPathItem("DELETE", "Delete Cash Book Voucher", "Cash Book", "Delete a cash book voucher"),
+                #endregion
+
                 #region Database
                 ["/getTId"] = GetPathItem("GET", "Get Transaction ID", "Database", "Get current transaction ID from SQL log"),
                 #endregion
@@ -895,7 +928,7 @@ namespace GCR_autocount_api
                 {
                     ["summary"] = "List available AutoCount projects",
                     ["tags"] = new[] { "Auth" },
-                    ["description"] = "List all AutoCount companies/projects from A2006.dmf. No authentication required. Pass any `companyName`, `databaseName`, or `remark` value as `project` in POST /login to choose a project.",
+                    ["description"] = "List all AutoCount companies/projects from the .dmf file(s) configured via settings.json (dmfFolder/dmfFile, default %ProgramData%/AutoCount/Accounting 2). No authentication required. Pass any `companyName`, `databaseName`, or `remark` value as `project` in POST /login to choose a project.",
                     ["security"] = new object[] { },
                     ["responses"] = new Dictionary<string, object>
                     {

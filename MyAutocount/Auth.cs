@@ -18,9 +18,13 @@ namespace GCR_autocount_api
         private static string databaseName;
         private static string serverName;
         private static string saPassword;
+        private static string dmfFolder;
+        private static string dmfFile;
 
         public static string CurrentDatabaseName { get { return databaseName; } }
         public static string CurrentServerName { get { return serverName; } }
+        public static string CurrentDmfFolder { get { return MySettings.ResolveDmfFolder(GetCurrentDmfSettings()); } }
+        public static string[] CurrentDmfFiles { get { return MySettings.ResolveDmfFiles(GetCurrentDmfSettings()); } }
         public static string CurrentCompanyName { get { return _currentCompanyName; } }
         private static string _currentCompanyName;
         private static string _currentRemark;
@@ -73,11 +77,13 @@ namespace GCR_autocount_api
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             try
             {
-                string appDataPath = System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                string folder = System.IO.Path.Combine(appDataPath, "AutoCount", "Accounting 2");
-                if (!Directory.Exists(folder)) return list;
-                // Scan every .dmf (not just A2006.dmf) so no company is missed
-                string[] dmfFiles = Directory.GetFiles(folder, "*.dmf");
+                string[] dmfFiles = CurrentDmfFiles;
+                if (dmfFiles == null || dmfFiles.Length == 0)
+                {
+                    Utils.Log("No .dmf files found in: " + CurrentDmfFolder + " (check dmfFolder/dmfFile in settings.json)");
+                    return list;
+                }
+                // dmfFile set = use only that file; otherwise scan every .dmf in dmfFolder
                 foreach (string dmfPath in dmfFiles)
                 {
                     try
@@ -197,11 +203,39 @@ namespace GCR_autocount_api
         public static void InitCrudentials()
         {
             MySettings settings = MySettings.GetMySettings();
+            if (settings == null) return;
             ipAddress = settings.ipAddress;
             port = settings.port;
             databaseName = settings.databaseName;
             serverName = settings.serverName;
             saPassword = settings.saPassword;
+            dmfFolder = settings.dmfFolder;
+            dmfFile = settings.dmfFile;
+        }
+
+        private static MySettings GetCurrentDmfSettings()
+        {
+            // Re-read settings.json so edits to dmfFolder/dmfFile apply without restart.
+            // Falls back to cached values, then to defaults.
+            try
+            {
+                string settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
+                if (File.Exists(settingsPath))
+                {
+                    string json = File.ReadAllText(settingsPath);
+                    MySettings fromFile = JsonConvert.DeserializeObject<MySettings>(json);
+                    if (fromFile != null && (!string.IsNullOrWhiteSpace(fromFile.dmfFolder) || !string.IsNullOrWhiteSpace(fromFile.dmfFile)))
+                        return fromFile;
+                    if (fromFile != null)
+                    {
+                        fromFile.dmfFolder = dmfFolder;
+                        fromFile.dmfFile = dmfFile;
+                        return fromFile;
+                    }
+                }
+            }
+            catch { }
+            return new MySettings() { dmfFolder = dmfFolder, dmfFile = dmfFile };
         }
 
         public static void Init(string username = "KENNY", string password = "1111")

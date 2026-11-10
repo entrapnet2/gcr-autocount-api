@@ -1,5 +1,27 @@
 # Lessons Learned
 
+## 2026-11-10 (v1.0.5 version alignment)
+- **Request**: last deploy was 1.0.4, update to 1.0.5 and keep increasing. Remote max tag was only v1.0.3 (one tag per push), so a plain push would have minted v1.0.4, not v1.0.5.
+- **Fix**: tagged the release commit v1.0.4 manually (`git tag v1.0.4 <commit>; git push origin v1.0.4`) to align the tag with the deployed 1.0.4 build, then pushed main — CI computed max=v1.0.4 and released v1.0.5. "Keep on increase" needs nothing further: every main push auto-bumps patch.
+- **Note**: dmfFolder/dmfFile configurability (settings.json) arrived via another session's uncommitted work — reviewed, tested (62/62 e2e + /companies dmf fields verified live), committed together.
+
+## 2026-11-10 (version never bumps locally)
+- **Symptom**: console/banner always showed v1.0.0.0 on local builds while GitHub had v1.0.0-v1.0.3 (one per push — CI side was fine).
+- **Root causes (two)**:
+  1. This clone never fetched tags (`git describe` -> "No names found"). CI fetches all history (`fetch-depth: 0`); local needed one `git fetch --tags origin`. Fresh clones get tags automatically — this repo just predates the tagging.
+  2. Even with tags, the csproj target was skipped: SDK-style default `Version` is `1.0.0`, so `Condition="'$(Version)' == ''"` was never true. Fixed by conditioning on `'$(Version)' == '1.0.0'` and setting `AssemblyVersion`/`FileVersion`/`InformationalVersion` directly (conditional defaults won't override those), appending `.0` to the x.y.z tag.
+- **Result**: plain `dotnet build` now stamps latest tag (verified FileVersion 1.0.3.0 + banner `v1.0.3.0`); CI's `-p:Version=` still overrides. Related: MSB3027 lock errors mean stale `GCR-autocount-api` processes — kill ALL before build.
+
+## 2026-11-10 (Cash Book vouchers — wiki was right)
+
+### CashBook module (Cash Payment + Cash Receipt, FULL CRUD)
+- **I was wrong saying no API exists**: user pointed to wiki `Cash_Book_Payment_Voucher_v2` using `AutoCount.GL.CashBook.CashBookCommand` — verified it exists in the referenced `AutoCount2.Accounting` NuGet package all along. My earlier reflection only covered GL/ARAP/Purchase DLLs, never `AutoCount.Accounting.dll`. Lesson: reflect the assembly that matches the wiki's References list, not just the obvious DLL.
+- **API**: `CashBookCommand.Create/AddNew(CashBookType)/Edit/Delete`, `doc.AddDetail()/AddPaymentDetail()/Save()`. `CashBookType` = CashReceipt|CashPayment. Detail props: AccNo/Description/Amount/**TaxCode** (wiki sample says GSTCode — wrong in 2.2)/InclusiveTax. Payment props: PaymentMethod/ChequeNo/BankCharge/PaymentAmount.
+- **Implemented** `POST /CashBook/add` (`type`: payment|receipt), edit (clears + re-adds lines via DeleteDetail(0)/DeletePaymentDetail(0) loops — no ClearDetails method exists), delete, getAll/getSingle/getDetail/count on `vCashBook`/`vCashBookDTL`. Verified live: PV add→get→edit→delete, receipt add→delete.
+- **Slash DocNo trap**: auto-generated receipt numbers look like `P/OR-26-11-001` — unreachable via `/{docNo}` routes (Nancy splits on `/`, even encoded). For receipts, clients must supply their own slash-free `docNo`; noted in Swagger. Test receipt cleaned via direct SQL on CB/CBPaymentDTL/CBDTL by DocKey.
+- Payee field is `PayTo` on the doc but `DealWith` in `vCashBook` view.
+- Cash Book has NO knock-off (direct GL) — AR receipt-with-knockoff and AP payment posting remain impossible (no such document API in any SDK version incl. 2.2.34, verified by downloading + reflecting latest packages).
+
 ## 2026-11-10 (ARAP + PurchaseInvoice)
 
 ### Firm request: receipt knock-off, supplier bill, payment voucher, debtor ageing
