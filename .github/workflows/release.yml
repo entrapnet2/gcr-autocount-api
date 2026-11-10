@@ -50,12 +50,16 @@ jobs:
           Remove-Item -LiteralPath "$stage\publish" -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item -LiteralPath "$stage\*.pdb" -Force -ErrorAction SilentlyContinue
           Remove-Item -LiteralPath "$stage\fr.zip" -Force -ErrorAction SilentlyContinue
+          # Never ship real config (contains SA password) - provide a template instead
+          Remove-Item -LiteralPath "$stage\settings.json" -Force -ErrorAction SilentlyContinue
+          '{"ipAddress":"localhost","port":"8888","databaseName":"YOUR_DB","serverName":"YOUR_SERVER","saPassword":"YOUR_SA_PASSWORD"}' | Set-Content -LiteralPath "$stage\settings.example.json" -NoNewline
           @"
           GCR AutoCount API Server v${{ steps.version.outputs.number }}
           ========================
           (see README.md in the repo for full docs)
 
-          1. Edit settings.json to match your SQL Server and port.
+          1. Copy settings.example.json to settings.json and fill in your SQL Server and port.
+             (If settings.json is missing, the server tries to auto-create it from AutoCount's A2006.dmf.)
           2. Run GCR-autocount-api.exe (console) or install as a Windows service (admin):
              .\GCR-autocount-api.exe install --delayed start
           3. Swagger UI: http://localhost:8888/swagger
