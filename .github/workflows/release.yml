@@ -1,0 +1,76 @@
+name: Auto-release on push
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    # Opt out of a release for a push with "[skip release]" in the message
+    if: "!contains(github.event.head_commit.message, '[skip release]')"
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Compute next version
+        id: version
+        shell: pwsh
+        run: |
+          $tags = git tag --list "v*" | Where-Object { $_ -match '^v\d+\.\d+\.\d+$' }
+          $max = [Version]"0.0.0"
+          foreach ($t in $tags) {
+            $v = [Version]$t.Substring(1)
+            if ($v -gt $max) { $max = $v }
+          }
+          if ($max.Major -eq 0) { $next = [Version]"1.0.0" }
+          else { $next = [Version]::new($max.Major, $max.Minor, $max.Build + 1) }
+          "number=$next" >> $env:GITHUB_OUTPUT
+          Write-Output "Next version: $next (previous max: $max)"
+
+      - name: Build Release
+        shell: pwsh
+        run: dotnet build GCR-autocount-api.sln -c Release -p:Version=${{ steps.version.outputs.number }}
+
+      - name: Package zip
+        shell: pwsh
+        run: |
+          $stage = "$env:RUNNER_TEMP\release-stage"
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          Copy-Item -Path "MyAutocount\bin\Release\net48\*" -Destination $stage -Recurse -Exclude "logs"
+          Remove-Item -LiteralPath "$stage\logs" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath "$stage\publish" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath "$stage\*.pdb" -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath "$stage\fr.zip" -Force -ErrorAction SilentlyContinue
+          @"
+          GCR AutoCount API Server v${{ steps.version.outputs.number }}
+          ========================
+          (see README.md in the repo for full docs)
+
+          1. Edit settings.json to match your SQL Server and port.
+          2. Run GCR-autocount-api.exe (console) or install as a Windows service (admin):
+             .\GCR-autocount-api.exe install --delayed start
+          3. Swagger UI: http://localhost:8888/swagger
+             - GET /companies lists available AutoCount projects (no login needed)
+             - POST /login with username + password (+ optional project) returns a JWT
+          Requirements: Windows, .NET Framework 4.8, AutoCount Accounting 2.2 installed.
+          "@ | Set-Content -LiteralPath "$stage\README.txt"
+          "${{ steps.version.outputs.number }}" | Set-Content -LiteralPath "$stage\version.txt" -NoNewline
+          $zip = "GCR-autocount-api-v${{ steps.version.outputs.number }}.zip"
+          Compress-Archive -Path "$stage\*" -DestinationPath $zip -Force
+          "zip=$zip" >> $env:GITHUB_OUTPUT
+        id: package
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "v${{ steps.version.outputs.number }}" "${{ steps.package.outputs.zip }}" --generate-notes --title "v${{ steps.version.outputs.number }}"

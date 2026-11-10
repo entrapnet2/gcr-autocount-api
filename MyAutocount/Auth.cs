@@ -12,11 +12,18 @@ namespace GCR_autocount_api
     {
         private static AutoCount.Data.DBSetting _dbSetting;
         private static AutoCount.Authentication.UserSession _userSession;
+        private static readonly object _sessionLock = new object();
         public static string ipAddress;
         public static string port;
         private static string databaseName;
         private static string serverName;
         private static string saPassword;
+
+        public static string CurrentDatabaseName { get { return databaseName; } }
+        public static string CurrentServerName { get { return serverName; } }
+        public static string CurrentCompanyName { get { return _currentCompanyName; } }
+        private static string _currentCompanyName;
+        private static string _currentRemark;
 
         public static AutoCount.Data.DBSetting dbSetting
         {
@@ -60,6 +67,90 @@ namespace GCR_autocount_api
 
         }
 
+        public static List<DatabaseInfo> GetAvailableDatabases()
+        {
+            try
+            {
+                string appDataPath = System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                string dmfPath = System.IO.Path.Combine(appDataPath + "\\AutoCount\\Accounting 2", "A2006.dmf");
+                if (!File.Exists(dmfPath)) return new List<DatabaseInfo>();
+                System.Data.DataTable table = DatabaseInfo.DatabaseManagementFileToDataTable(dmfPath);
+                var list = new List<DatabaseInfo>();
+                for (int i = 0; i < table.Rows.Count; i++)
+                {
+                    try { list.Add(new DatabaseInfo(table, i)); }
+                    catch { }
+                }
+                return list;
+            }
+            catch
+            {
+                return new List<DatabaseInfo>();
+            }
+        }
+
+        public static DatabaseInfo FindDatabase(string identifier)
+        {
+            if (string.IsNullOrWhiteSpace(identifier)) return null;
+            string id = identifier.Trim();
+            var all = GetAvailableDatabases();
+            // Match databaseName first, then companyName, then remark (case-insensitive)
+            var match = all.FirstOrDefault(d =>
+                string.Equals(d.databaseName, id, StringComparison.OrdinalIgnoreCase));
+            if (match != null) return match;
+            match = all.FirstOrDefault(d =>
+                string.Equals(d.companyName, id, StringComparison.OrdinalIgnoreCase));
+            if (match != null) return match;
+            match = all.FirstOrDefault(d =>
+                d.remark != null && string.Equals(d.remark, id, StringComparison.OrdinalIgnoreCase));
+            return match;
+        }
+
+        /// <summary>
+        /// Switch the active project/database. Returns the DatabaseInfo switched to, or null if not found.
+        /// Persists choice to settings.json so restarts keep the selection.
+        /// </summary>
+        public static DatabaseInfo SwitchDatabase(string identifier)
+        {
+            DatabaseInfo info = FindDatabase(identifier);
+            if (info == null) return null;
+            lock (_sessionLock)
+            {
+                databaseName = info.databaseName;
+                serverName = info.serverName;
+                _currentCompanyName = info.companyName;
+                _currentRemark = info.remark;
+                _dbSetting = new AutoCount.Data.DBSetting(AutoCount.Data.DBServerType.SQL2000, serverName, "sa", saPassword, databaseName);
+                _userSession = new AutoCount.Authentication.UserSession(_dbSetting);
+            }
+            PersistDatabaseChoice(info);
+            Utils.Log("Switched project to: " + info.companyName + " [" + info.databaseName + "]");
+            return info;
+        }
+
+        private static void PersistDatabaseChoice(DatabaseInfo info)
+        {
+            try
+            {
+                string settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
+                if (File.Exists(settingsPath))
+                {
+                    string json = File.ReadAllText(settingsPath);
+                    MySettings settings = JsonConvert.DeserializeObject<MySettings>(json);
+                    if (settings != null)
+                    {
+                        settings.databaseName = info.databaseName;
+                        settings.serverName = info.serverName;
+                        File.WriteAllText(settingsPath, JsonConvert.SerializeObject(settings));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.Log("PersistDatabaseChoice warning: " + ex.Message);
+            }
+        }
+
         public static void InitUserSession()
         {
             _userSession = new AutoCount.Authentication.UserSession(_dbSetting);
@@ -97,7 +188,24 @@ namespace GCR_autocount_api
             InitCrudentials();
             InitDbSetting();
             InitUserSession();
+            RefreshCurrentCompanyName();
             Login(_userSession, username, password);
+        }
+
+        private static void RefreshCurrentCompanyName()
+        {
+            try
+            {
+                var all = GetAvailableDatabases();
+                var match = all.FirstOrDefault(d =>
+                    string.Equals(d.databaseName, databaseName, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    _currentCompanyName = match.companyName;
+                    _currentRemark = match.remark;
+                }
+            }
+            catch { }
         }
 
 

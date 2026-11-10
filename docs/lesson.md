@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## 2026-11-10
+
+### Multi-project login (choose AutoCount company at login)
+- **Task**: Allow choosing which AutoCount project/company to log in to (previously hardcoded to row 0 of A2006.dmf / settings.json `databaseName`)
+- **Implementation** (server is single-active-DB: login with `project` switches the whole server):
+  - `Auth.GetAvailableDatabases()` reads all entries from `A2006.dmf`; `Auth.SwitchDatabase(id)` matches databaseName, then companyName, then remark (case-insensitive), rebuilds DBSetting+UserSession, persists choice to `settings.json`
+  - `GET /companies` (aliases `/projects`, `/databases`, no auth) lists projects with `isCurrent` flag
+  - `POST /login` accepts optional `project`/`databaseName`/`companyName`/`database` (form, query, or JSON); returns `databaseName`+`companyName`+`serverName`; JWT now carries `db`+`company` claims
+  - `AuthenticatedModule` bypasses auth for the listing endpoints and rejects tokens whose `db` no longer matches the active DB (forces re-login after a switch)
+- **Verified live**: 3 projects listed; default login, `project=AED_TEST` login, invalid-project 400, companyName login all OK; full e2e suite 51/51 PASS
+- **Note**: `localhost` failed to connect in tests but `127.0.0.1` worked (IPv6 `localhost` resolution); use `http://127.0.0.1:8888` for Invoke-RestMethod/WebRequest
+
 ## 2026-08-05
 
 ### DeliveryReturn optional location support

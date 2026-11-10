@@ -11,11 +11,18 @@ namespace GCR_autocount_api
 
         public static string GenerateToken(string username, int expireMinutes = 60)
         {
+            return GenerateToken(username, null, null, expireMinutes);
+        }
+
+        public static string GenerateToken(string username, string databaseName, string companyName, int expireMinutes = 60)
+        {
             var header = new { alg = "HS256", typ = "JWT" };
             var now = DateTime.UtcNow;
             var payload = new
             {
                 sub = username,
+                db = databaseName,
+                company = companyName,
                 iat = ToUnixTime(now),
                 exp = ToUnixTime(now.AddMinutes(expireMinutes))
             };
@@ -66,6 +73,40 @@ namespace GCR_autocount_api
                 string payloadJson = Base64UrlDecode(parts[1]);
                 dynamic payload = Newtonsoft.Json.JsonConvert.DeserializeObject(payloadJson);
                 return payload.sub;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static string GetDatabaseNameFromToken(string token)
+        {
+            try
+            {
+                var parts = token.Split('.');
+                if (parts.Length != 3) return null;
+                string payloadJson = Base64UrlDecode(parts[1]);
+                dynamic payload = Newtonsoft.Json.JsonConvert.DeserializeObject(payloadJson);
+                if (payload.db == null) return null;
+                return (string)payload.db;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static string GetCompanyNameFromToken(string token)
+        {
+            try
+            {
+                var parts = token.Split('.');
+                if (parts.Length != 3) return null;
+                string payloadJson = Base64UrlDecode(parts[1]);
+                dynamic payload = Newtonsoft.Json.JsonConvert.DeserializeObject(payloadJson);
+                if (payload.company == null) return null;
+                return (string)payload.company;
             }
             catch
             {

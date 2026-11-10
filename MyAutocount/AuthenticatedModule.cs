@@ -21,7 +21,8 @@ namespace GCR_autocount_api
         {
             string path = context.Request.Path.ToLower();
 
-            if (path == "/login" || path.StartsWith("/swagger"))
+            if (path == "/login" || path.StartsWith("/swagger")
+                || path == "/companies" || path == "/projects" || path == "/databases")
             {
                 return null;
             }
@@ -42,6 +43,28 @@ namespace GCR_autocount_api
 
             string username = JwtHelper.GetUsernameFromToken(token);
             Log($"Authenticated request from: {username}");
+
+            // If token is bound to a project but server has since switched, force re-login
+            // so the caller never reads/writes the wrong company by accident.
+            string tokenDb = null;
+            try { tokenDb = JwtHelper.GetDatabaseNameFromToken(token); } catch { }
+            string activeDb = null;
+            try { activeDb = Auth.CurrentDatabaseName; } catch { }
+            if (!string.IsNullOrEmpty(tokenDb) && !string.IsNullOrEmpty(activeDb)
+                && !string.Equals(tokenDb, activeDb, StringComparison.OrdinalIgnoreCase))
+            {
+                Log($"Project mismatch: token for [{tokenDb}], active [{activeDb}]");
+                return CreateUnauthorizedResponse(
+                    "Active project is '" + activeDb + "' but token is for '" + tokenDb + "'. Please re-login with project='" + activeDb + "' (see GET /companies).");
+            }
+
+            // Make active project visible to downstream modules
+            try
+            {
+                context.Items["AuthUsername"] = username;
+                context.Items["AuthDatabaseName"] = activeDb;
+            }
+            catch { }
 
             return null;
         }

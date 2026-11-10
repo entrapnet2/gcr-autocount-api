@@ -26,6 +26,9 @@ _dll/
 # Test results
 test_results/
 
+# Local release zips (published via GitHub Releases instead)
+releases/
+
 # Temporary files
 *.tmp
 *.temp

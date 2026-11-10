@@ -153,6 +153,7 @@ namespace GCR_autocount_api
             {
                 #region Authentication
                 ["/login"] = GetLoginPathItem(),
+                ["/companies"] = GetCompaniesPathItem(),
                 #endregion
 
                 #region Master Data
@@ -812,7 +813,7 @@ namespace GCR_autocount_api
                 {
                     ["summary"] = "Login to AutoCount",
                     ["tags"] = new[] { "Auth" },
-                    ["description"] = "Authenticate with AutoCount and receive JWT token. No authentication required.",
+                    ["description"] = "Authenticate with AutoCount and receive JWT token. No authentication required.\n\n**Project selection:** optionally pass `project` (accepts companyName, databaseName, or remark) to choose which AutoCount company to log in to. Omit to use the current default. Use `GET /companies` to list available projects.",
                     ["security"] = new object[] { }, // This removes the lock icon from the login endpoint
                     ["requestBody"] = new Dictionary<string, object>
                     {
@@ -827,7 +828,8 @@ namespace GCR_autocount_api
                                     ["properties"] = new Dictionary<string, object>
                                     {
                                         ["username"] = new Dictionary<string, object> { ["type"] = "string", ["example"] = "KENNY", ["default"] = "KENNY" },
-                                        ["password"] = new Dictionary<string, object> { ["type"] = "string", ["example"] = "1111", ["default"] = "1111" }
+                                        ["password"] = new Dictionary<string, object> { ["type"] = "string", ["example"] = "1111", ["default"] = "1111" },
+                                        ["project"] = new Dictionary<string, object> { ["type"] = "string", ["example"] = "AED_TEST2", ["description"] = "Optional: companyName, databaseName, or remark from GET /companies" }
                                     }
                                 }
                             }
@@ -842,11 +844,29 @@ namespace GCR_autocount_api
                             {
                                 ["application/json"] = new Dictionary<string, object>
                                 {
-                                    ["example"] = new { success = true, token = "jwt-token-here", message = "Login successful" }
+                                    ["example"] = new { success = true, token = "jwt-token-here", databaseName = "AED_TEST2", companyName = "Example Sdn Bhd", message = "Login successful" }
                                 }
                             }
                         },
                         ["401"] = new Dictionary<string, object> { ["description"] = "Invalid credentials" }
+                    }
+                }
+            };
+        }
+
+        private object GetCompaniesPathItem()
+        {
+            return new Dictionary<string, object>
+            {
+                ["get"] = new Dictionary<string, object>
+                {
+                    ["summary"] = "List available AutoCount projects",
+                    ["tags"] = new[] { "Auth" },
+                    ["description"] = "List all AutoCount companies/projects from A2006.dmf. No authentication required. Pass any `companyName`, `databaseName`, or `remark` value as `project` in POST /login to choose a project.",
+                    ["security"] = new object[] { },
+                    ["responses"] = new Dictionary<string, object>
+                    {
+                        ["200"] = new Dictionary<string, object> { ["description"] = "List of projects" }
                     }
                 }
             };
