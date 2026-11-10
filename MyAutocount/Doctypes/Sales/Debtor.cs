@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -145,6 +146,21 @@ namespace GCR_autocount_api.Doctypes.Sales
                 }
             });
 
+            Get($"/{DoctypeName}/ageing", _ =>
+            {
+                try
+                {
+                    return GetAgeing(this.Request);
+                }
+                catch (Exception ex)
+                {
+                    Log(ex.ToString());
+                    Response response = ex.Message;
+                    response.StatusCode = HttpStatusCode.InternalServerError;
+                    return response;
+                }
+            });
+
         }
 
         private string GetAll(Request request = null)
@@ -154,6 +170,44 @@ namespace GCR_autocount_api.Doctypes.Sales
         private string GetSingle(string debtorCode)
         {
             return Sql.GetSingleFromSql(userSession, DatabaseTable, PrimaryKey, debtorCode, FromWithActive, SelectWithActive);
+        }
+
+        /// <summary>
+        /// Debtor ageing by outstanding sales invoices.
+        /// Query params: debtorCode (optional), asOfDate dd-MM-yyyy (optional, default today).
+        /// Buckets are aged by invoice date: Current (0-30 days), 31-60, 61-90, 91-120, over 120.
+        /// </summary>
+        private string GetAgeing(Request request)
+        {
+            string dbName = userSession.DBSetting.DBName;
+            DateTime asOf = DateTime.Today;
+            if (request.Query.asOfDate != null && !string.IsNullOrEmpty((string)request.Query.asOfDate))
+            {
+                try { asOf = DateStringToDateTime((string)request.Query.asOfDate); }
+                catch { throw new Exception("Invalid asOfDate, expected dd-MM-yyyy"); }
+            }
+            string debtorCode = request.Query.debtorCode;
+
+            string where = "Outstanding > 0 AND DocDate IS NOT NULL";
+            var sqlParams = new List<object> { new SqlParameter("asOf", asOf) };
+            if (!string.IsNullOrEmpty(debtorCode))
+            {
+                where += " AND DebtorCode = @debtorCode";
+                sqlParams.Add(new SqlParameter("debtorCode", debtorCode));
+            }
+
+            string query = "SELECT DebtorCode, DebtorCompanyName AS CompanyName, " +
+                "SUM(CASE WHEN AgeDays <= 30 THEN Outstanding ELSE 0 END) AS [Current], " +
+                "SUM(CASE WHEN AgeDays BETWEEN 31 AND 60 THEN Outstanding ELSE 0 END) AS [Days31_60], " +
+                "SUM(CASE WHEN AgeDays BETWEEN 61 AND 90 THEN Outstanding ELSE 0 END) AS [Days61_90], " +
+                "SUM(CASE WHEN AgeDays BETWEEN 91 AND 120 THEN Outstanding ELSE 0 END) AS [Days91_120], " +
+                "SUM(CASE WHEN AgeDays > 120 THEN Outstanding ELSE 0 END) AS [Over120Days], " +
+                "SUM(Outstanding) AS [TotalOutstanding], COUNT(*) AS [OpenDocCount] " +
+                "FROM (SELECT DebtorCode, DebtorCompanyName, Outstanding, " +
+                "DATEDIFF(day, DocDate, @asOf) AS AgeDays " +
+                "FROM [" + dbName + "].[dbo].[vInvoice] WHERE " + where + ") t " +
+                "GROUP BY DebtorCode, DebtorCompanyName ORDER BY TotalOutstanding DESC";
+            return Sql.RunSqlQuery(userSession, query, sqlParams.ToArray());
         }
 
         private string Add(dynamic data)

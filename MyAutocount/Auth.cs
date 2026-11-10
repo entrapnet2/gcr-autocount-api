@@ -69,24 +69,45 @@ namespace GCR_autocount_api
 
         public static List<DatabaseInfo> GetAvailableDatabases()
         {
+            var list = new List<DatabaseInfo>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             try
             {
                 string appDataPath = System.Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                string dmfPath = System.IO.Path.Combine(appDataPath + "\\AutoCount\\Accounting 2", "A2006.dmf");
-                if (!File.Exists(dmfPath)) return new List<DatabaseInfo>();
-                System.Data.DataTable table = DatabaseInfo.DatabaseManagementFileToDataTable(dmfPath);
-                var list = new List<DatabaseInfo>();
-                for (int i = 0; i < table.Rows.Count; i++)
+                string folder = System.IO.Path.Combine(appDataPath, "AutoCount", "Accounting 2");
+                if (!Directory.Exists(folder)) return list;
+                // Scan every .dmf (not just A2006.dmf) so no company is missed
+                string[] dmfFiles = Directory.GetFiles(folder, "*.dmf");
+                foreach (string dmfPath in dmfFiles)
                 {
-                    try { list.Add(new DatabaseInfo(table, i)); }
-                    catch { }
+                    try
+                    {
+                        System.Data.DataTable table = DatabaseInfo.DatabaseManagementFileToDataTable(dmfPath);
+                        for (int i = 0; i < table.Rows.Count; i++)
+                        {
+                            try
+                            {
+                                var info = new DatabaseInfo(table, i);
+                                if (string.IsNullOrWhiteSpace(info.databaseName)) continue;
+                                if (seen.Add(info.databaseName)) list.Add(info);
+                            }
+                            catch (Exception ex)
+                            {
+                                Utils.Log("Skipping unreadable DMF row " + i + " in " + Path.GetFileName(dmfPath) + ": " + ex.Message);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Utils.Log("Skipping unreadable DMF file " + Path.GetFileName(dmfPath) + ": " + ex.Message);
+                    }
                 }
-                return list;
             }
-            catch
+            catch (Exception ex)
             {
-                return new List<DatabaseInfo>();
+                Utils.Log("GetAvailableDatabases error: " + ex.Message);
             }
+            return list;
         }
 
         public static DatabaseInfo FindDatabase(string identifier)

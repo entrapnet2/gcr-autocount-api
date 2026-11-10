@@ -170,8 +170,7 @@ namespace GCR_autocount_api
                 }),
                 ["/SalesAgent/delete/{agentCode}"] = GetPathItem("DELETE", "Delete Sales Agent", "Master Data", "Delete a sales agent"),
 
-                ["/Debtor/getAll"] = GetPathItem("GET", "Get all Debtors", "Master Data", "Retrieve all debtor records. Includes IsActive field ('T' = active, 'F' = inactive)"),
-                ["/Debtor/count"] = GetPathItem("GET", "Count Debtors", "Master Data", "Get total number of debtor records. Supports optional $filter for filtered counts (IsActive field available for filtering)"),
+                ["/Debtor/getAll"] = GetPathItem("GET", "Get all Debtors", "Master Data", "Retrieve all debtor records. Includes IsActive field ('T' = active, 'F' = inactive)"),                ["/Debtor/count"] = GetPathItem("GET", "Count Debtors", "Master Data", "Get total number of debtor records. Supports optional $filter for filtered counts (IsActive field available for filtering)"),
                 ["/Debtor/getSingle/{debtorCode}"] = GetPathItem("GET", "Get Single Debtor", "Master Data", "Retrieve a single debtor. Includes IsActive field ('T' = active, 'F' = inactive)"),
                 ["/Debtor/add"] = GetPathItem("POST", "Add Debtor", "Master Data", "Create a new debtor\n\n**Note**: debtorCode must follow existing format (e.g., 2200-T001). Parent GL account 2200-0000 must exist.", true, new {
                     debtorCode = "2200-T001",
@@ -201,10 +200,11 @@ namespace GCR_autocount_api
                     companyName = "Customer ABC Updated Sdn Bhd",
                     billingAddress1 = "123 Jalan Ampang",
                     billingAddress2 = "Kuala Lumpur",
-                    creditTerm = "Net 60",
+                    creditTerm = "C.O.D",
                     creditLimit = 75000
                 }),
                 ["/Debtor/delete/{debtorCode}"] = GetPathItem("DELETE", "Delete Debtor", "Master Data", "Delete a debtor"),
+                ["/Debtor/ageing"] = GetPathItemWithQueryParams("GET", "Get Debtor Ageing", "Master Data", "Debtor ageing by outstanding sales invoices, grouped in buckets (Current 0-30 days, 31-60, 61-90, 91-120, over 120) aged by invoice date. Returns one row per debtor with open invoices.\n\n**Query Parameters:**\n- debtorCode: single debtor (optional, omit for all)\n- asOfDate: age as of this date in dd-MM-yyyy (optional, default today)", "debtorCode,asOfDate"),
 
                 ["/Creditor/getAll"] = GetPathItem("GET", "Get all Creditors", "Master Data", "Retrieve all creditor records. Includes IsActive field ('T' = active, 'F' = inactive)"),
                 ["/Creditor/count"] = GetPathItem("GET", "Count Creditors", "Master Data", "Get total number of creditor records. Supports optional $filter for filtered counts (IsActive field available for filtering)"),
@@ -235,6 +235,39 @@ namespace GCR_autocount_api
                     creditLimit = 150000
                 }),
                 ["/Creditor/delete/{creditorCode}"] = GetPathItem("DELETE", "Delete Creditor", "Master Data", "Delete a creditor"),
+
+                ["/Receipt/getAll"] = GetPathItem("GET", "Get all Receipts", "ARAP", "Retrieve all customer receipts (Official Receipts). READ-ONLY: the SDK exposes no Receipt posting API."),
+                ["/Receipt/count"] = GetPathItem("GET", "Count Receipts", "ARAP", "Get total number of receipt records. Supports optional $filter for filtered counts"),
+                ["/Receipt/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Receipt", "ARAP", "Retrieve a single receipt"),
+                ["/Receipt/getDetail/{docNo}"] = GetPathItem("GET", "Get Receipt Details", "ARAP", "Retrieve receipt payment-method lines"),
+                ["/Receipt/getKnockOff/{docNo}"] = GetPathItem("GET", "Get Receipt Knock-Off", "ARAP", "List invoices/documents this receipt was knocked off against, with amounts"),
+                ["/Payment/getAll"] = GetPathItem("GET", "Get all Payments", "ARAP", "Retrieve all supplier payment vouchers. READ-ONLY: the SDK exposes no Payment posting API."),
+                ["/Payment/count"] = GetPathItem("GET", "Count Payments", "ARAP", "Get total number of payment records. Supports optional $filter for filtered counts"),
+                ["/Payment/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Payment", "ARAP", "Retrieve a single payment voucher"),
+                ["/Payment/getDetail/{docNo}"] = GetPathItem("GET", "Get Payment Details", "ARAP", "Retrieve payment voucher payment-method lines"),
+                ["/Payment/getKnockOff/{docNo}"] = GetPathItem("GET", "Get Payment Knock-Off", "ARAP", "List supplier bills this payment was knocked off against, with amounts"),
+                ["/PurchaseInvoice/getAll"] = GetPathItem("GET", "Get all Purchase Invoices", "ARAP", "Retrieve all supplier bills (purchase invoices)"),
+                ["/PurchaseInvoice/count"] = GetPathItem("GET", "Count Purchase Invoices", "ARAP", "Get total number of purchase invoice records. Supports optional $filter for filtered counts"),
+                ["/PurchaseInvoice/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Purchase Invoice", "ARAP", "Retrieve a single supplier bill"),
+                ["/PurchaseInvoice/getDetail/{docNo}"] = GetPathItem("GET", "Get Purchase Invoice Details", "ARAP", "Retrieve supplier bill with details"),
+                ["/PurchaseInvoice/add"] = GetPathItem("POST", "Add Purchase Invoice", "ARAP", "Create a new supplier bill (purchase invoice)\n\n**docNo is optional**: Omit or pass null/empty to let AutoCount auto-generate the running number.", true, new {
+                    docNo = "",
+                    creditorCode = "3100-A001",
+                    date = "15-01-2024",
+                    shipInfo = "Ship to Warehouse",
+                    detailList = new[] {
+                        new { itemCode = "RM00001", uom = "UNIT", quantity = 100, unitPrice = 10.50, discount = "0" }
+                    }
+                }),
+                ["/PurchaseInvoice/edit"] = GetPathItem("PUT", "Edit Purchase Invoice", "ARAP", "Update an existing supplier bill", true, new {
+                    docNo = "PI-00001",
+                    creditorCode = "400-S001",
+                    date = "15-01-2024",
+                    detailList = new[] {
+                        new { itemCode = "RM00001", uom = "UNIT", quantity = 150, unitPrice = 10.50, discount = "0" }
+                    }
+                }),
+                ["/PurchaseInvoice/delete/{docNo}"] = GetPathItem("DELETE", "Delete Purchase Invoice", "ARAP", "Delete a supplier bill"),
 
                 ["/StockGroup/getAll"] = GetPathItem("GET", "Get all Stock Groups", "Master Data", "Retrieve all stock group records"),
                 ["/StockGroup/count"] = GetPathItem("GET", "Count Stock Groups", "Master Data", "Get total number of stock group records. Supports optional $filter for filtered counts"),

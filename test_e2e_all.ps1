@@ -515,6 +515,21 @@ if ($result.Status -eq "PASS") {
     Write-Host "   $($result.Status): DELETE /StockAdjustment/delete/$testAdjDocNo" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
 }
 
+Write-Host "`n10. Testing Receipt / Payment / PurchaseInvoice (read)..." -ForegroundColor Yellow
+
+foreach ($ep in @("/Receipt/getAll", "/Receipt/count", "/Payment/getAll", "/Payment/count", "/PurchaseInvoice/getAll", "/PurchaseInvoice/count")) {
+    $result = Test-ApiEndpoint -Name "GET $ep" -Method Get -Endpoint $ep -Headers $headers
+    Write-Host "   $($result.Status): GET $ep" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+}
+
+Write-Host "`n11. Testing Debtor ageing..." -ForegroundColor Yellow
+
+$result = Test-ApiEndpoint -Name "GET Debtor/ageing" -Method Get -Endpoint "/Debtor/ageing" -Headers $headers
+Write-Host "   $($result.Status): GET /Debtor/ageing" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
+$result = Test-ApiEndpoint -Name "GET Debtor/ageing with debtorCode" -Method Get -Endpoint "/Debtor/ageing?debtorCode=2200-T001" -Headers $headers
+Write-Host "   $($result.Status): GET /Debtor/ageing?debtorCode=2200-T001" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "TEST SUMMARY" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan

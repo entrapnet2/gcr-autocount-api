@@ -1,8 +1,19 @@
 # Lessons Learned
 
-## 2026-11-10
+## 2026-11-10 (ARAP + PurchaseInvoice)
 
-### Multi-project login (choose AutoCount company at login)
+### Firm request: receipt knock-off, supplier bill, payment voucher, debtor ageing
+- **Receipt/Payment POST is impossible with this SDK**: searched every AutoCount.*.dll — there is no Receipt/Payment document entity or command (only `AutoCount.GL.ReceiptPayment.ReceiptPayment` which is a report Inquire class, plus Form*/Report* UI). Same situation as TaxType ("No public API in NuGet package"). Posting OR/PV must be done in AutoCount itself.
+- **What was built instead**:
+  - `Receipt` + `Payment` modules (READ-ONLY): getAll/getSingle/getDetail/count on `vARPayment`/`vAPPayment` (+Detail views), plus `getKnockOff/{docNo}` joining `ARPaymentKnockOff`/`APPaymentKnockOff` → invoice DocNo/DocDate/Amount (knock-off linkage the firm asked about)
+  - `PurchaseInvoice` module (supplier bill, FULL CRUD): `PurchaseInvoiceCommand.Create/AddNew/Edit/Delete` + `doc.AddDetail()/ClearDetails()/Save()` mirror SalesInvoice exactly (CreditorCode instead of DebtorCode). Verified live: add→getSingle→getDetail→edit→delete all OK
+  - `GET /Debtor/ageing` (debtorCode?, asOfDate dd-MM-yyyy?): buckets Current/31-60/61-90/91-120/Over120 by DocDate from outstanding invoices
+- **View names are NOT portable — use vInvoice, not vSalesInvoice**: `vSalesInvoice` exists in NO database (all 3: AED_TEST/TEST2/TESTING); the SalesInvoice module actually reads `vInvoice`. `vPurchaseInvoice`, `vARPayment`, `vAPPayment`, `ARPaymentKnockOff`, `APPaymentKnockOff` exist in all 3. New code uses only these.
+- **T-SQL alias trap**: `AS Current` fails (reserved keyword, error 156) — must write `AS [Current]`. Same for any future bucket aliases.
+- **e2e for new endpoints is read-only by design**: write-cycle tests hardcode seed codes (creditor/item) that only exist in one DB; Receipt/Payment/PInvoice getAll+count and ageing pass on empty data on any DB. PurchaseInvoice write cycle verified manually, not in the suite.
+- **Swagger**: new "ARAP" tag (Receipt/Payment read-only noted in descriptions, PurchaseInvoice add/edit examples); `/Debtor/ageing` via GetPathItemWithQueryParams
+
+## 2026-11-10 (multi-project login)
 - **Task**: Allow choosing which AutoCount project/company to log in to (previously hardcoded to row 0 of A2006.dmf / settings.json `databaseName`)
 - **Implementation** (server is single-active-DB: login with `project` switches the whole server):
   - `Auth.GetAvailableDatabases()` reads all entries from `A2006.dmf`; `Auth.SwitchDatabase(id)` matches databaseName, then companyName, then remark (case-insensitive), rebuilds DBSetting+UserSession, persists choice to `settings.json`

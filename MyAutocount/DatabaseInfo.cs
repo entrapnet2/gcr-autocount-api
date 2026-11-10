@@ -38,10 +38,10 @@ namespace GCR_autocount_api
 
             foreach (XmlNode node in doc.DocumentElement.SelectNodes("/AutoCountDatabase/DatabaseInfo"))
             {
-                string companyName = node.SelectSingleNode("CompanyName").InnerText;
-                string remark = node.SelectSingleNode("Remark").InnerText;
-                string databaseName = node.SelectSingleNode("DatabaseName").InnerText;
-                string serverName = node.SelectSingleNode("ServerName").InnerText;
+                string companyName = node.SelectSingleNode("CompanyName")?.InnerText ?? "";
+                string remark = node.SelectSingleNode("Remark")?.InnerText ?? "";
+                string databaseName = node.SelectSingleNode("DatabaseName")?.InnerText ?? "";
+                string serverName = node.SelectSingleNode("ServerName")?.InnerText ?? "";
 
                 DataRow row = table.NewRow();
                 row["CompanyName"] = companyName;
