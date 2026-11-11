@@ -168,6 +168,7 @@ namespace GCR_autocount_api
         {
             if (IsApiLicenseError(ex))
             {
+                Log("API licence check failed - returning HTTP 402 API_LICENSE_MISSING to client (no document was saved).");
                 var errorObj = new
                 {
                     success = false,
