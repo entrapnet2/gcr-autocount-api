@@ -1,5 +1,15 @@
 # Lessons Learned
 
+## 2026-11-10 (midnight log split, keep 7)
+- **Request**: split logs every 12am so a never-restarted service doesn't grow one giant file; same keep-7-newest rule.
+- **Implemented**: `Utils.StartDailyRotation()` (called from `MyService.Start`) arms a one-shot timer to next local midnight, then re-arms every firing — same versioned naming + retention as startup rotation (refactored into RotateLogCore/EnforceLogRetention). All failures swallowed; logLock serializes with writers.
+- **Verified**: "Daily log rotation scheduled" on startup; callback invoked via reflection executed rotation + reschedule cleanly.
+
+## 2026-11-10 (versioned logs + swagger version)
+- **Request**: fresh versioned log on every restart; Swagger must show the real version.
+- **Implemented**: `Utils.AppVersion` (from stamped assembly, 3-part when revision=0) used by banner, `Utils.RotateLog()` called first in `MyService.Start` (moves `logs/app.log` → `logs/archive/app-<ver>-<yyyyMMdd-HHmmss>.log`, skips empty/missing, survives locks), and Swagger `info.version = Utils.AppVersion`. Verified: two restarts → two archived logs; `/swagger/spec` reports 1.0.6.
+- **Note**: rotate FIRST in Start — `Auth.Init` already logs during startup, so anything later loses the earliest lines.
+
 ## 2026-11-10 (receipt failed on customer server — missing API licence)
 - **Symptom**: `POST /Receipt/add` → "Object reference not set to an instance of an object", nothing saved. Our code was suspected.
 - **Actual cause (from app.log stack)**: `SaveARPayment → FiscalYear.CheckTransactionDate → ModuleControl.CheckAPICall → IsAPILicenseKeyValid → ProductVersion.GetProductVersion → NullReferenceException`. AutoCount enforces an **API module licence key per book** on every transactional save, and a missing key surfaces as NullReference instead of a clean error. Not our bug — their book/machine lacks the registered API licence.

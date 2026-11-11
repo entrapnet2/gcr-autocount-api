@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Nancy;
 using Nancy.Hosting.Self;
 using System.Net;
-using System.Reflection;
  
 namespace GCR_autocount_api
 {
@@ -18,6 +17,9 @@ namespace GCR_autocount_api
         {
             try
             {
+                Utils.RotateLog();
+                Utils.StartDailyRotation();
+
                 HostConfiguration hostConfigs = new HostConfiguration()
                 {
                     UrlReservations = new UrlReservations() { CreateAutomatically = true }
@@ -30,7 +32,7 @@ namespace GCR_autocount_api
                 nancyHost = new NancyHost(hostConfigs, new Uri($"http://{Auth.ipAddress}:{Auth.port}"));
                 nancyHost.Start();
 
-                string version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "?";
+                string version = Utils.AppVersion;
                 Utils.Log($"GCR AutoCount API Server v{version}");
                 Utils.Log($"Active project: {Auth.CurrentCompanyName} [{Auth.CurrentDatabaseName}]");
                 Utils.Log($"DMF folder: {Auth.CurrentDmfFolder}");
