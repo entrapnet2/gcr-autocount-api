@@ -121,6 +121,12 @@ namespace GCR_autocount_api.Doctypes.GL
                 }
             });
 
+            // ?docNo= fallbacks for auto-generated numbers containing '/' (e.g. P/OR-26-11-001),
+            // which cannot travel in a URL path segment even when encoded.
+            Get($"/{DoctypeName}/getSingle", _ => GetSingleByQuery());
+            Get($"/{DoctypeName}/getDetail", _ => GetDetailByQuery());
+            Delete($"/{DoctypeName}/delete", _ => DeleteByQuery());
+
             Get($"/{DoctypeName}/count", _ =>
             {
                 try
@@ -135,6 +141,55 @@ namespace GCR_autocount_api.Doctypes.GL
                     return response;
                 }
             });
+        }
+        private string QueryDocNo()
+        {
+            string docNo = this.Request.Query.docNo;
+            if (string.IsNullOrEmpty(docNo))
+                throw new Exception("docNo query parameter required");
+            return docNo;
+        }
+
+        private object GetSingleByQuery()
+        {
+            try
+            {
+                return Sql.GetSingleFromSql(userSession, DatabaseTable, PrimaryKey, QueryDocNo());
+            }
+            catch (Exception ex)
+            {
+                Log(ex.ToString());
+                return Utils.CreateErrorResponse(ex.Message);
+            }
+        }
+
+        private object GetDetailByQuery()
+        {
+            try
+            {
+                return Sql.GetSingleDetailFromSql(userSession, DatabaseTable, DetailTable, QueryDocNo());
+            }
+            catch (Exception ex)
+            {
+                Log(ex.ToString());
+                return Utils.CreateErrorResponse(ex.Message);
+            }
+        }
+
+        private object DeleteByQuery()
+        {
+            try
+            {
+                Response response = Delete(QueryDocNo());
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Log(ex.ToString());
+                Response response = ex.Message;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                return response;
+            }
         }
 
         private static AutoCount.GL.CashBook.CashBookType ParseType(dynamic data)

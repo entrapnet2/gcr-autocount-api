@@ -236,16 +236,62 @@ namespace GCR_autocount_api
                 }),
                 ["/Creditor/delete/{creditorCode}"] = GetPathItem("DELETE", "Delete Creditor", "Master Data", "Delete a creditor"),
 
-                ["/Receipt/getAll"] = GetPathItem("GET", "Get all Receipts", "ARAP", "Retrieve all customer receipts (Official Receipts). READ-ONLY: the SDK exposes no Receipt posting API."),
+                ["/Receipt/getAll"] = GetPathItem("GET", "Get all Receipts", "ARAP", "Retrieve all customer receipts (Official Receipts) with knock-off support"),
                 ["/Receipt/count"] = GetPathItem("GET", "Count Receipts", "ARAP", "Get total number of receipt records. Supports optional $filter for filtered counts"),
-                ["/Receipt/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Receipt", "ARAP", "Retrieve a single receipt"),
-                ["/Receipt/getDetail/{docNo}"] = GetPathItem("GET", "Get Receipt Details", "ARAP", "Retrieve receipt payment-method lines"),
-                ["/Receipt/getKnockOff/{docNo}"] = GetPathItem("GET", "Get Receipt Knock-Off", "ARAP", "List invoices/documents this receipt was knocked off against, with amounts"),
-                ["/Payment/getAll"] = GetPathItem("GET", "Get all Payments", "ARAP", "Retrieve all supplier payment vouchers. READ-ONLY: the SDK exposes no Payment posting API."),
+                ["/Receipt/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Receipt", "ARAP", "Retrieve a single receipt. If DocNo contains `/` (auto-generated OR numbers like `P/OR-26-11-001`), use `GET /Receipt/getSingle?docNo=...` instead"),
+                ["/Receipt/getDetail/{docNo}"] = GetPathItem("GET", "Get Receipt Details", "ARAP", "Retrieve receipt payment-method lines. For `/`-numbered docs use `GET /Receipt/getDetail?docNo=...`"),
+                ["/Receipt/getKnockOff/{docNo}"] = GetPathItem("GET", "Get Receipt Knock-Off", "ARAP", "List invoices/documents this receipt was knocked off against, with amounts. For `/`-numbered docs use `GET /Receipt/getKnockOff?docNo=...`"),
+                ["/Receipt/add"] = GetPathItem("POST", "Add Receipt with Knock-Off", "ARAP", "Post a customer receipt and knock off invoices/debit notes.\n\n**knockOff**: array of `{docType: IV|DN, docNo, amount, date?}`. Omit to post an unapplied receipt.\n\n**docNo is optional**: omit to auto-generate. NOTE: auto-generated OR numbers contain `/` which breaks URL routes — supply your own slash-free `docNo`, or use the `?docNo=` variants for reads/deletes.", true, new {
+                    docNo = "OR-00001",
+                    debtorCode = "300-A001",
+                    date = "15-01-2024",
+                    description = "Payment received",
+                    payments = new[] {
+                        new { paymentMethod = "CASH", chequeNo = "", paymentAmount = 100.00, bankCharge = 0.00 }
+                    },
+                    knockOff = new[] {
+                        new { docType = "IV", docNo = "IV-00001", amount = 100.00 }
+                    }
+                }),
+                ["/Receipt/edit"] = GetPathItem("PUT", "Edit Receipt", "ARAP", "Update a receipt (header + lines + knock-off replaced for supplied sections)", true, new {
+                    docNo = "OR-00001",
+                    description = "Payment received updated",
+                    payments = new[] {
+                        new { paymentMethod = "CASH", paymentAmount = 120.00 }
+                    },
+                    knockOff = new[] {
+                        new { docType = "IV", docNo = "IV-00001", amount = 120.00 }
+                    }
+                }),
+                ["/Receipt/delete/{docNo}"] = GetPathItem("DELETE", "Delete Receipt", "ARAP", "Delete a receipt (knock-off released). For `/`-numbered docs use `DELETE /Receipt/delete?docNo=...`"),
+                ["/Payment/getAll"] = GetPathItem("GET", "Get all Payments", "ARAP", "Retrieve all supplier payment vouchers with knock-off support"),
                 ["/Payment/count"] = GetPathItem("GET", "Count Payments", "ARAP", "Get total number of payment records. Supports optional $filter for filtered counts"),
-                ["/Payment/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Payment", "ARAP", "Retrieve a single payment voucher"),
-                ["/Payment/getDetail/{docNo}"] = GetPathItem("GET", "Get Payment Details", "ARAP", "Retrieve payment voucher payment-method lines"),
-                ["/Payment/getKnockOff/{docNo}"] = GetPathItem("GET", "Get Payment Knock-Off", "ARAP", "List supplier bills this payment was knocked off against, with amounts"),
+                ["/Payment/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Payment", "ARAP", "Retrieve a single payment voucher. If DocNo contains `/`, use `GET /Payment/getSingle?docNo=...` instead"),
+                ["/Payment/getDetail/{docNo}"] = GetPathItem("GET", "Get Payment Details", "ARAP", "Retrieve payment voucher payment-method lines. For `/`-numbered docs use `GET /Payment/getDetail?docNo=...`"),
+                ["/Payment/getKnockOff/{docNo}"] = GetPathItem("GET", "Get Payment Knock-Off", "ARAP", "List supplier bills this payment was knocked off against, with amounts. For `/`-numbered docs use `GET /Payment/getKnockOff?docNo=...`"),
+                ["/Payment/add"] = GetPathItem("POST", "Add Payment with Knock-Off", "ARAP", "Post a supplier payment and knock off bills/debit notes.\n\n**knockOff**: array of `{docType: PI|DN, docNo, amount, date?}`. Omit for unapplied payment.\n\n**docNo is optional**: omit to auto-generate (supply slash-free `docNo` if auto-numbers contain `/`).", true, new {
+                    docNo = "PV-00001",
+                    creditorCode = "400-S001",
+                    date = "15-01-2024",
+                    description = "Payment to supplier",
+                    payments = new[] {
+                        new { paymentMethod = "CASH", chequeNo = "", paymentAmount = 200.00, bankCharge = 0.00 }
+                    },
+                    knockOff = new[] {
+                        new { docType = "PI", docNo = "PI-00001", amount = 200.00 }
+                    }
+                }),
+                ["/Payment/edit"] = GetPathItem("PUT", "Edit Payment", "ARAP", "Update a payment voucher (header + lines + knock-off replaced for supplied sections)", true, new {
+                    docNo = "PV-00001",
+                    description = "Payment to supplier updated",
+                    payments = new[] {
+                        new { paymentMethod = "CASH", paymentAmount = 250.00 }
+                    },
+                    knockOff = new[] {
+                        new { docType = "PI", docNo = "PI-00001", amount = 250.00 }
+                    }
+                }),
+                ["/Payment/delete/{docNo}"] = GetPathItem("DELETE", "Delete Payment", "ARAP", "Delete a payment voucher (knock-off released). For `/`-numbered docs use `DELETE /Payment/delete?docNo=...`"),
                 ["/PurchaseInvoice/getAll"] = GetPathItem("GET", "Get all Purchase Invoices", "ARAP", "Retrieve all supplier bills (purchase invoices)"),
                 ["/PurchaseInvoice/count"] = GetPathItem("GET", "Count Purchase Invoices", "ARAP", "Get total number of purchase invoice records. Supports optional $filter for filtered counts"),
                 ["/PurchaseInvoice/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Purchase Invoice", "ARAP", "Retrieve a single supplier bill"),

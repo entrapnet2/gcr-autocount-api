@@ -522,6 +522,11 @@ foreach ($ep in @("/Receipt/getAll", "/Receipt/count", "/Payment/getAll", "/Paym
     Write-Host "   $($result.Status): GET $ep" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
 }
 
+foreach ($ep in @("/Receipt/getKnockOff?docNo=NONEXISTENT", "/Payment/getKnockOff?docNo=NONEXISTENT")) {
+    $result = Test-ApiEndpoint -Name "GET $ep (empty)" -Method Get -Endpoint $ep -Headers $headers
+    Write-Host "   $($result.Status): GET $ep" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+}
+
 Write-Host "`n11. Testing Debtor ageing..." -ForegroundColor Yellow
 
 $result = Test-ApiEndpoint -Name "GET Debtor/ageing" -Method Get -Endpoint "/Debtor/ageing" -Headers $headers

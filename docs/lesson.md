@@ -1,5 +1,12 @@
 # Lessons Learned
 
+## 2026-11-10 (AR receipt + AP payment posting — wiki was right again)
+- **I was wrong saying no Receipt/Payment API exists**: wiki `AR_Receive_Payment` names `AutoCount.ARAP.ARPayment.ARPaymentDataAccess` — it exists in the referenced `AutoCount2.Accounting` NuGet package all along. My earlier reflection only covered GL/ARAP/Purchase DLLs and truncated output hid it. Lesson: when the wiki gives exact class names, grep for those names across ALL loaded assemblies instead of browsing namespaces.
+- **Implemented full CRUD with knock-off** for Receipt (AR: RI=invoice, RD=debit note) and Payment (AP: PB=bill, PD=debit note): `Create/NewARPayment/GetARPayment/SaveARPayment(doc,userId,false)/DeleteARPayment`, `doc.NewDetail()/KnockOff(docType,docNo,amount[,date])/ClearDetails()/ClearKnockOff()`. `userSession.LoginUserID` is the userId. Verified live: receipt add(+knockoff 1000)→getKnockOff→edit→delete; payment add→get→delete; invoice Outstanding restored to 29331.20 after receipt delete (knock-off integrity holds).
+- **Knock-off keys point at MASTER tables** (`ARInvoice`/`ARDN`, `APInvoice`/`APDN`), not views (`vInvoice` DocKey differs: 1386 vs 1381). getKnockOff joins must target masters with DocType guards (RI/RD, PB/PD) + COALESCE.
+- **Slash DocNos break path routes**: auto OR numbers like `P/OR-26-11-002` 404 even URL-encoded (Nancy splits on `/`). Added `?docNo=` fallback routes for getSingle/getDetail/getKnockOff/delete on Receipt/Payment/CashBook. Guidance: supply slash-free docNo on add.
+- **My own test-output parsing trap**: `Sql.RunSqlQuery` returns a BARE JSON array (no `.value` wrapper — that's the OData path). Empty `ForEach` output ≠ empty response; verify with raw `Invoke-WebRequest`.
+
 ## 2026-11-10 (v1.0.5 version alignment)
 - **Request**: last deploy was 1.0.4, update to 1.0.5 and keep increasing. Remote max tag was only v1.0.3 (one tag per push), so a plain push would have minted v1.0.4, not v1.0.5.
 - **Fix**: tagged the release commit v1.0.4 manually (`git tag v1.0.4 <commit>; git push origin v1.0.4`) to align the tag with the deployed 1.0.4 build, then pushed main — CI computed max=v1.0.4 and released v1.0.5. "Keep on increase" needs nothing further: every main push auto-bumps patch.
