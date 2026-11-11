@@ -23,6 +23,7 @@ namespace GCR_autocount_api
             {
                 try
                 {
+                    Utils.LogRequest(this.Request);
                     string username = this.Request.Form["username"];
                     string password = this.Request.Form["password"];
                     string project = this.Request.Form["project"];
@@ -154,6 +155,7 @@ namespace GCR_autocount_api
         {
             try
             {
+                Utils.LogRequest(this.Request);
                 var all = Auth.GetAvailableDatabases();
                 string current = Auth.CurrentDatabaseName;
                 var result = all.Select(d => new

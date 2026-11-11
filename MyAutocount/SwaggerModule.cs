@@ -124,7 +124,7 @@ namespace GCR_autocount_api
                 info = new
                 {
                     title = "GCR AutoCount Sync API",
-                    version = "1.0.0",
+                    version = Utils.AppVersion,
                     description = "REST API for AutoCount ERP\n\n**How to use:**\n1. POST /login with username/password to get JWT token\n2. Click 'Authorize' button at top right\n3. Enter token as: Bearer <your-token>\n4. Now you can test all endpoints"
                 },
                 servers = new[] { new { url = "/" } },

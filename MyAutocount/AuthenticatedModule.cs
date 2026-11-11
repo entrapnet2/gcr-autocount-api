@@ -19,6 +19,8 @@ namespace GCR_autocount_api
 
         private Response ValidateJwtToken(NancyContext context)
         {
+            Utils.LogRequest(context.Request);
+
             string path = context.Request.Path.ToLower();
 
             if (path == "/login" || path.StartsWith("/swagger")
@@ -92,8 +94,8 @@ namespace GCR_autocount_api
 
             if (request.Query.ContainsKey("token"))
             {
-                Log("Found token in query: " + request.Query["token"]);
-                return request.Query["token"];
+                Log("Found token in query (value redacted)");
+                return (string)request.Query["token"];
             }
 
             Log("No token found in request");
