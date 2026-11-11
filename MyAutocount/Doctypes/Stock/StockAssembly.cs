@@ -55,7 +55,7 @@ namespace GCR_autocount_api.Doctypes.Stock
                     dynamic data = JsonConvert.DeserializeObject(Nancy.IO.RequestStream.FromStream(this.Request.Body).AsString());
                     return Add(data);
                 }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Put($"/{DoctypeName}/edit", _ =>
@@ -65,7 +65,7 @@ namespace GCR_autocount_api.Doctypes.Stock
                     dynamic data = JsonConvert.DeserializeObject(Nancy.IO.RequestStream.FromStream(this.Request.Body).AsString());
                     return Edit(data);
                 }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Delete($"/{DoctypeName}/delete/{{docNo}}", args =>

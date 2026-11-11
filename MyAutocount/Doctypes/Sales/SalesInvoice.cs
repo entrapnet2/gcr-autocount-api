@@ -103,7 +103,7 @@ namespace GCR_autocount_api.Doctypes.Sales
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    return Utils.CreateErrorResponse(ex.Message);
+                    return Utils.ToErrorResponse(ex);
                 }
             });
 
@@ -119,7 +119,7 @@ namespace GCR_autocount_api.Doctypes.Sales
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    return Utils.CreateErrorResponse(ex.Message);
+                    return Utils.ToErrorResponse(ex);
                 }
             });
 

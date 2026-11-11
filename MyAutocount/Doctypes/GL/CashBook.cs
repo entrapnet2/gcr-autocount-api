@@ -44,7 +44,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    return Utils.CreateErrorResponse(ex.Message);
+                    return Utils.ToErrorResponse(ex);
                 }
             });
 
@@ -57,7 +57,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    return Utils.CreateErrorResponse(ex.Message);
+                    return Utils.ToErrorResponse(ex);
                 }
             });
 
@@ -70,7 +70,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    return Utils.CreateErrorResponse(ex.Message);
+                    return Utils.ToErrorResponse(ex);
                 }
             });
 
@@ -85,7 +85,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    return Utils.CreateErrorResponse(ex.Message);
+                    return Utils.ToErrorResponse(ex);
                 }
             });
 
@@ -101,7 +101,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    return Utils.CreateErrorResponse(ex.Message);
+                    return Utils.ToErrorResponse(ex);
                 }
             });
 
@@ -115,9 +115,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    Response response = ex.Message;
-                    response.StatusCode = HttpStatusCode.InternalServerError;
-                    return response;
+                    return Utils.ToErrorResponse(ex);
                 }
             });
 
@@ -159,7 +157,7 @@ namespace GCR_autocount_api.Doctypes.GL
             catch (Exception ex)
             {
                 Log(ex.ToString());
-                return Utils.CreateErrorResponse(ex.Message);
+                return Utils.ToErrorResponse(ex);
             }
         }
 
@@ -172,7 +170,7 @@ namespace GCR_autocount_api.Doctypes.GL
             catch (Exception ex)
             {
                 Log(ex.ToString());
-                return Utils.CreateErrorResponse(ex.Message);
+                return Utils.ToErrorResponse(ex);
             }
         }
 
@@ -186,9 +184,7 @@ namespace GCR_autocount_api.Doctypes.GL
             catch (Exception ex)
             {
                 Log(ex.ToString());
-                Response response = ex.Message;
-                response.StatusCode = HttpStatusCode.InternalServerError;
-                return response;
+                return Utils.ToErrorResponse(ex);
             }
         }
 

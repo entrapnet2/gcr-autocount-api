@@ -75,19 +75,19 @@ namespace GCR_autocount_api.Doctypes
             Get($"/DocNoFormat/getDocTypes", _ =>
             {
                 try { return GetDocTypes(); }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Get($"/DocNoFormat/getAll", _ =>
             {
                 try { return GetAll(this.Request); }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Get($"/DocNoFormat/count", _ =>
             {
                 try { return GetCount(this.Request); }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
         }
 

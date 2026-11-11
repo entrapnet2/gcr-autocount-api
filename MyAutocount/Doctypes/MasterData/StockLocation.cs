@@ -61,7 +61,7 @@ namespace GCR_autocount_api.Doctypes.MasterData
                     dynamic jsonData = Utils.ParseRequest(this.Request);
                     return Add(jsonData);
                 }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Put($"/{DoctypeName}/edit", _ =>
@@ -71,7 +71,7 @@ namespace GCR_autocount_api.Doctypes.MasterData
                     dynamic jsonData = Utils.ParseRequest(this.Request);
                     return Edit(jsonData);
                 }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Delete($"/{DoctypeName}/delete/{{locationCode}}", args =>

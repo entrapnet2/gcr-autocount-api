@@ -29,19 +29,19 @@ namespace GCR_autocount_api.Doctypes.Purchase
             Get($"/{DoctypeName}/getAll", _ =>
             {
                 try { return GetAll(this.Request); }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Get($"/{DoctypeName}/getSingle/{{docNo}}", args =>
             {
                 try { return GetSingle(args.docNo); }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Get($"/{DoctypeName}/getDetail/{{docNo}}", args =>
             {
                 try { return GetSingleDetail(args.docNo); }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Post($"/{DoctypeName}/add", _ =>
@@ -51,7 +51,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
                     dynamic data = JsonConvert.DeserializeObject(Nancy.IO.RequestStream.FromStream(this.Request.Body).AsString());
                     return Add(data);
                 }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Put($"/{DoctypeName}/edit", _ =>
@@ -61,19 +61,19 @@ namespace GCR_autocount_api.Doctypes.Purchase
                     dynamic data = JsonConvert.DeserializeObject(Nancy.IO.RequestStream.FromStream(this.Request.Body).AsString());
                     return Edit(data);
                 }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Delete($"/{DoctypeName}/delete/{{docNo}}", args =>
             {
                 try { return Delete(args.docNo); }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
 
             Get($"/{DoctypeName}/count", _ =>
             {
                 try { return Sql.GetCountFromSql(userSession, DatabaseTable, this.Request); }
-                catch (Exception ex) { Log(ex.ToString()); return CreateErrorResponse(ex.Message); }
+                catch (Exception ex) { Log(ex.ToString()); return Utils.ToErrorResponse(ex); }
             });
         }
 

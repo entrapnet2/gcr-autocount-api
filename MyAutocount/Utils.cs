@@ -125,6 +125,68 @@ namespace GCR_autocount_api
             return response;
         }
 
+        /// <summary>
+        /// True when AutoCount blocked the call because the API module licence
+        /// key is not registered (ModuleControl.CheckAPICall/IsAPILicenseKeyValid).
+        /// The SDK throws NullReferenceException here instead of a clear error.
+        /// </summary>
+        public static bool IsApiLicenseError(Exception ex)
+        {
+            try
+            {
+                string text = ex?.ToString() ?? "";
+                Exception inner = ex?.InnerException;
+                while (inner != null)
+                {
+                    text += "\n" + inner.ToString();
+                    inner = inner.InnerException;
+                }
+                return text.Contains("IsAPILicenseKeyValid") || text.Contains("CheckAPICall");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static string FullErrorMessage(Exception ex)
+        {
+            var parts = new List<string>();
+            while (ex != null)
+            {
+                if (!string.IsNullOrEmpty(ex.Message)) parts.Add(ex.Message);
+                ex = ex.InnerException;
+            }
+            return string.Join(" <- ", parts);
+        }
+
+        /// <summary>
+        /// Route-level error mapping: 402 with an actionable message for missing
+        /// API licence, otherwise the existing 500 JSON (with full message chain).
+        /// </summary>
+        public static Response ToErrorResponse(Exception ex)
+        {
+            if (IsApiLicenseError(ex))
+            {
+                var errorObj = new
+                {
+                    success = false,
+                    code = "API_LICENSE_MISSING",
+                    message = "AutoCount API licence key is not registered for this company book, so AutoCount blocked the posting. Please register the API module licence in AutoCount for this book (licence key from AutoCount or your vendor), then retry. No document was saved."
+                };
+                var response = (Response)JsonConvert.SerializeObject(errorObj);
+                response.StatusCode = (HttpStatusCode)402;
+                response.ContentType = "application/json";
+                return response;
+            }
+            return CreateErrorResponse(FullErrorMessage(ex));
+        }
+
+        public static Response CreateErrorResponse(Exception ex)
+        {
+            return ToErrorResponse(ex);
+        }
+
     }
 
 }
