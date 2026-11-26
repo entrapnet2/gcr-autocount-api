@@ -241,62 +241,72 @@ namespace GCR_autocount_api
                 ["/Receipt/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Receipt", "ARAP", "Retrieve a single receipt. If DocNo contains `/` (auto-generated OR numbers like `P/OR-26-11-001`), use `GET /Receipt/getSingle?docNo=...` instead"),
                 ["/Receipt/getDetail/{docNo}"] = GetPathItem("GET", "Get Receipt Details", "ARAP", "Retrieve receipt payment-method lines. For `/`-numbered docs use `GET /Receipt/getDetail?docNo=...`"),
                 ["/Receipt/getKnockOff/{docNo}"] = GetPathItem("GET", "Get Receipt Knock-Off", "ARAP", "List invoices/documents this receipt was knocked off against, with amounts. For `/`-numbered docs use `GET /Receipt/getKnockOff?docNo=...`"),
-                ["/Receipt/add"] = GetPathItem("POST", "Add Receipt with Knock-Off", "ARAP", "Post a customer receipt and knock off invoices/debit notes.\n\n**knockOff**: array of `{docType: IV|DN, docNo, amount, date?}`. Omit to post an unapplied receipt.\n\n**docNo is optional**: omit to auto-generate. NOTE: auto-generated OR numbers contain `/` which breaks URL routes — supply your own slash-free `docNo`, or use the `?docNo=` variants for reads/deletes.", true, new {
+                ["/Receipt/add"] = GetPathItem("POST", "Add Receipt with Knock-Off", "ARAP", "Post a customer receipt and knock off invoices/debit notes. Returns JSON {success, docNo, message}.\n\n**knockOff**: array of `{docType: IV|DN, docNo, amount, date?}`. Omit to post an unapplied receipt. DocType accepts IV/RI (invoice) or DN/RD (debit note).\n\n**Project/department**: `projNo` (or `project`) + `deptNo` (or `department`) set the receipt header; use valid master codes. Knock-off GL lines inherit the header project automatically.\n\n**docNo is optional**: omit to auto-generate. NOTE: auto-generated OR numbers contain `/` which breaks URL routes — supply your own slash-free `docNo`, or use the `?docNo=` variants for reads/deletes.", true, new {
                     docNo = "OR-00001",
                     debtorCode = "300-A001",
                     date = "15-01-2024",
                     description = "Payment received",
+                    note = "Received via bank transfer",
+                    projNo = "HQ",
+                    deptNo = "",
                     payments = new[] {
-                        new { paymentMethod = "CASH", chequeNo = "", paymentAmount = 100.00, bankCharge = 0.00 }
+                        new { paymentMethod = "BANK", chequeNo = "", paymentAmount = 100.00, bankCharge = 0.00 }
                     },
                     knockOff = new[] {
                         new { docType = "IV", docNo = "IV-00001", amount = 100.00 }
                     }
                 }),
-                ["/Receipt/edit"] = GetPathItem("PUT", "Edit Receipt", "ARAP", "Update a receipt (header + lines + knock-off replaced for supplied sections)", true, new {
+                ["/Receipt/edit"] = GetPathItem("PUT", "Edit Receipt", "ARAP", "Update a receipt (header + lines + knock-off replaced for supplied sections). Returns JSON.", true, new {
                     docNo = "OR-00001",
                     description = "Payment received updated",
+                    note = "Updated note",
+                    projNo = "HQ",
                     payments = new[] {
-                        new { paymentMethod = "CASH", paymentAmount = 120.00 }
+                        new { paymentMethod = "BANK", paymentAmount = 120.00 }
                     },
                     knockOff = new[] {
                         new { docType = "IV", docNo = "IV-00001", amount = 120.00 }
                     }
                 }),
-                ["/Receipt/delete/{docNo}"] = GetPathItem("DELETE", "Delete Receipt", "ARAP", "Delete a receipt (knock-off released). For `/`-numbered docs use `DELETE /Receipt/delete?docNo=...`"),
+                ["/Receipt/delete/{docNo}"] = GetPathItem("DELETE", "Delete Receipt", "ARAP", "Delete a receipt (knock-off released). Returns JSON. For `/`-numbered docs use `DELETE /Receipt/delete?docNo=...`"),
                 ["/Payment/getAll"] = GetPathItem("GET", "Get all Payments", "ARAP", "Retrieve all supplier payment vouchers with knock-off support"),
                 ["/Payment/count"] = GetPathItem("GET", "Count Payments", "ARAP", "Get total number of payment records. Supports optional $filter for filtered counts"),
                 ["/Payment/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Payment", "ARAP", "Retrieve a single payment voucher. If DocNo contains `/`, use `GET /Payment/getSingle?docNo=...` instead"),
                 ["/Payment/getDetail/{docNo}"] = GetPathItem("GET", "Get Payment Details", "ARAP", "Retrieve payment voucher payment-method lines. For `/`-numbered docs use `GET /Payment/getDetail?docNo=...`"),
                 ["/Payment/getKnockOff/{docNo}"] = GetPathItem("GET", "Get Payment Knock-Off", "ARAP", "List supplier bills this payment was knocked off against, with amounts. For `/`-numbered docs use `GET /Payment/getKnockOff?docNo=...`"),
-                ["/Payment/add"] = GetPathItem("POST", "Add Payment with Knock-Off", "ARAP", "Post a supplier payment and knock off bills/debit notes.\n\n**knockOff**: array of `{docType: PI|DN, docNo, amount, date?}`. Omit for unapplied payment.\n\n**docNo is optional**: omit to auto-generate (supply slash-free `docNo` if auto-numbers contain `/`).", true, new {
+                ["/Payment/add"] = GetPathItem("POST", "Add Payment with Knock-Off", "ARAP", "Post a supplier payment and knock off bills/debit notes. Returns JSON {success, docNo, message}.\n\n**knockOff**: array of `{docType: PI|DN, docNo, amount, date?}`. Omit for unapplied payment. DocType accepts PI/PB (bill) or DN/PD (debit note).\n\n**Project/department**: `projNo` (or `project`) + `deptNo` (or `department`) set the voucher header; knock-off GL lines inherit the header project automatically.\n\n**docNo is optional**: omit to auto-generate (supply slash-free `docNo` if auto-numbers contain `/`).", true, new {
                     docNo = "PV-00001",
                     creditorCode = "400-S001",
                     date = "15-01-2024",
                     description = "Payment to supplier",
+                    note = "Paid via bank transfer",
+                    projNo = "HQ",
+                    deptNo = "",
                     payments = new[] {
-                        new { paymentMethod = "CASH", chequeNo = "", paymentAmount = 200.00, bankCharge = 0.00 }
+                        new { paymentMethod = "BANK", chequeNo = "", paymentAmount = 200.00, bankCharge = 0.00 }
                     },
                     knockOff = new[] {
                         new { docType = "PI", docNo = "PI-00001", amount = 200.00 }
                     }
                 }),
-                ["/Payment/edit"] = GetPathItem("PUT", "Edit Payment", "ARAP", "Update a payment voucher (header + lines + knock-off replaced for supplied sections)", true, new {
+                ["/Payment/edit"] = GetPathItem("PUT", "Edit Payment", "ARAP", "Update a payment voucher (header + lines + knock-off replaced for supplied sections). Returns JSON.", true, new {
                     docNo = "PV-00001",
                     description = "Payment to supplier updated",
+                    note = "Updated note",
+                    projNo = "HQ",
                     payments = new[] {
-                        new { paymentMethod = "CASH", paymentAmount = 250.00 }
+                        new { paymentMethod = "BANK", paymentAmount = 250.00 }
                     },
                     knockOff = new[] {
                         new { docType = "PI", docNo = "PI-00001", amount = 250.00 }
                     }
                 }),
-                ["/Payment/delete/{docNo}"] = GetPathItem("DELETE", "Delete Payment", "ARAP", "Delete a payment voucher (knock-off released). For `/`-numbered docs use `DELETE /Payment/delete?docNo=...`"),
+                ["/Payment/delete/{docNo}"] = GetPathItem("DELETE", "Delete Payment", "ARAP", "Delete a payment voucher (knock-off released). Returns JSON. For `/`-numbered docs use `DELETE /Payment/delete?docNo=...`"),
                 ["/PurchaseInvoice/getAll"] = GetPathItem("GET", "Get all Purchase Invoices", "ARAP", "Retrieve all supplier bills (purchase invoices)"),
                 ["/PurchaseInvoice/count"] = GetPathItem("GET", "Count Purchase Invoices", "ARAP", "Get total number of purchase invoice records. Supports optional $filter for filtered counts"),
                 ["/PurchaseInvoice/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Purchase Invoice", "ARAP", "Retrieve a single supplier bill"),
                 ["/PurchaseInvoice/getDetail/{docNo}"] = GetPathItem("GET", "Get Purchase Invoice Details", "ARAP", "Retrieve supplier bill with details"),
-                ["/PurchaseInvoice/add"] = GetPathItem("POST", "Add Purchase Invoice", "ARAP", "Create a new supplier bill (purchase invoice)\n\n**docNo is optional**: Omit or pass null/empty to let AutoCount auto-generate the running number.", true, new {
+                ["/PurchaseInvoice/add"] = GetPathItem("POST", "Add Purchase Invoice", "ARAP", "Create a new supplier bill (purchase invoice). Returns JSON {success, docNo, message}.\n\n**docNo is optional**: Omit or pass null/empty to let AutoCount auto-generate the running number.", true, new {
                     docNo = "",
                     creditorCode = "3100-A001",
                     date = "15-01-2024",
@@ -305,7 +315,7 @@ namespace GCR_autocount_api
                         new { itemCode = "RM00001", uom = "UNIT", quantity = 100, unitPrice = 10.50, discount = "0" }
                     }
                 }),
-                ["/PurchaseInvoice/edit"] = GetPathItem("PUT", "Edit Purchase Invoice", "ARAP", "Update an existing supplier bill", true, new {
+                ["/PurchaseInvoice/edit"] = GetPathItem("PUT", "Edit Purchase Invoice", "ARAP", "Update an existing supplier bill. Returns JSON.", true, new {
                     docNo = "PI-00001",
                     creditorCode = "400-S001",
                     date = "15-01-2024",
@@ -313,7 +323,7 @@ namespace GCR_autocount_api
                         new { itemCode = "RM00001", uom = "UNIT", quantity = 150, unitPrice = 10.50, discount = "0" }
                     }
                 }),
-                ["/PurchaseInvoice/delete/{docNo}"] = GetPathItem("DELETE", "Delete Purchase Invoice", "ARAP", "Delete a supplier bill"),
+                ["/PurchaseInvoice/delete/{docNo}"] = GetPathItem("DELETE", "Delete Purchase Invoice", "ARAP", "Delete a supplier bill. Returns JSON."),
 
                 ["/StockGroup/getAll"] = GetPathItem("GET", "Get all Stock Groups", "Master Data", "Retrieve all stock group records"),
                 ["/StockGroup/count"] = GetPathItem("GET", "Count Stock Groups", "Master Data", "Get total number of stock group records. Supports optional $filter for filtered counts"),
@@ -407,6 +417,19 @@ namespace GCR_autocount_api
                     phone = "04-7654321"
                 }),
                 ["/StockLocation/delete/{locationCode}"] = GetPathItem("DELETE", "Delete Stock Location", "Master Data", "Delete a stock location"),
+
+                ["/PaymentMethod/getAll"] = GetPathItem("GET", "Get all Payment Methods", "Master Data", "Retrieve all payment method records (CASH, BANK, etc.)"),
+                ["/PaymentMethod/count"] = GetPathItem("GET", "Count Payment Methods", "Master Data", "Get total number of payment method records. Supports optional $filter for filtered counts"),
+                ["/PaymentMethod/getSingle/{code}"] = GetPathItem("GET", "Get Single Payment Method", "Master Data", "Retrieve a single payment method"),
+                ["/Project/getAll"] = GetPathItem("GET", "Get all Projects", "Master Data", "Retrieve all project records (branches are set up as projects)"),
+                ["/Project/count"] = GetPathItem("GET", "Count Projects", "Master Data", "Get total number of project records. Supports optional $filter for filtered counts"),
+                ["/Project/getSingle/{code}"] = GetPathItem("GET", "Get Single Project", "Master Data", "Retrieve a single project"),
+                ["/Department/getAll"] = GetPathItem("GET", "Get all Departments", "Master Data", "Retrieve all department records"),
+                ["/Department/count"] = GetPathItem("GET", "Count Departments", "Master Data", "Get total number of department records. Supports optional $filter for filtered counts"),
+                ["/Department/getSingle/{code}"] = GetPathItem("GET", "Get Single Department", "Master Data", "Retrieve a single department"),
+                ["/Account/getAll"] = GetPathItem("GET", "Get Chart of Accounts", "Master Data", "Retrieve GL chart of accounts with AccType (CA/FA/CL/LL/CP/RE/SL/SA/OI/CO/EP/AP/TX).\n\n**OData Parameters:**\n- $top: Max records (default: 5, max: 1000)\n- $filter: Filter expression (e.g., AccType eq 'EP')\n- $orderby: Sort field"),
+                ["/Account/count"] = GetPathItem("GET", "Count GL Accounts", "Master Data", "Get total number of GL accounts. Supports optional $filter for filtered counts (e.g., AccType eq 'EP' for expenses)"),
+                ["/Account/getSingle/{accNo}"] = GetPathItem("GET", "Get Single GL Account", "Master Data", "Retrieve a single GL account"),
                 #endregion
 
                 #region Sales
@@ -740,20 +763,22 @@ namespace GCR_autocount_api
                 ["/CashBook/count"] = GetPathItem("GET", "Count Cash Book Vouchers", "Cash Book", "Get total number of cash book vouchers. Supports optional $filter for filtered counts"),
                 ["/CashBook/getSingle/{docNo}"] = GetPathItem("GET", "Get Single Cash Book Voucher", "Cash Book", "Retrieve a single cash book voucher"),
                 ["/CashBook/getDetail/{docNo}"] = GetPathItem("GET", "Get Cash Book Details", "Cash Book", "Retrieve voucher with GL detail lines"),
-                ["/CashBook/add"] = GetPathItem("POST", "Add Cash Book Voucher", "Cash Book", "Create a cash payment or cash receipt voucher (direct GL posting, no knock-off).\n\n**type**: `payment` (default) or `receipt`.\n\n**docNo is optional**: omit to auto-generate. NOTE: auto-generated receipt numbers contain `/` (e.g. `P/OR-26-11-001`) which breaks URL routes — for receipts, supply your own `docNo` without slashes.", true, new {
+                ["/CashBook/add"] = GetPathItem("POST", "Add Cash Book Voucher", "Cash Book", "Create a cash payment or cash receipt voucher (direct GL posting, no knock-off). Returns JSON {success, docNo, message}.\n\n**type**: `payment` (default) or `receipt`.\n\n**docNo is optional**: omit to auto-generate, or pass `docNoFormatName` to pick a numbering format (e.g. petty-cash vs bank formats). NOTE: auto-generated receipt numbers contain `/` (e.g. `P/OR-26-11-001`) which breaks URL routes — for receipts, supply your own `docNo` without slashes.\n\n**Project/department**: per detail line via `projNo` (or `project`) + `deptNo` (or `department`); GL postings inherit the line project, so branch P&L works. Header has no project of its own.\n\n**note**: plain-text voucher note (stored by AutoCount, may round-trip as RTF).", true, new {
                     type = "payment",
                     docNo = "PV-00001",
+                    docNoFormatName = "",
                     date = "15-01-2024",
                     payTo = "TNB",
                     description = "Electricity bill",
+                    note = "Paid via Maybank",
                     payments = new[] {
                         new { paymentMethod = "CASH", paymentAmount = 100.00, chequeNo = "", bankCharge = 0.00 }
                     },
                     details = new[] {
-                        new { accNo = "9100-0000", description = "Electricity bill", amount = 100.00, taxCode = "", inclusiveTax = false }
+                        new { accNo = "9100-0000", description = "Electricity bill", amount = 100.00, taxCode = "", inclusiveTax = false, projNo = "HQ", deptNo = "" }
                     }
                 }),
-                ["/CashBook/edit"] = GetPathItem("PUT", "Edit Cash Book Voucher", "Cash Book", "Update an existing cash book voucher (header + lines replaced)", true, new {
+                ["/CashBook/edit"] = GetPathItem("PUT", "Edit Cash Book Voucher", "Cash Book", "Update an existing cash book voucher (header + lines replaced). Returns JSON.", true, new {
                     docNo = "PV-00001",
                     date = "15-01-2024",
                     payTo = "TNB Updated",
@@ -765,7 +790,11 @@ namespace GCR_autocount_api
                         new { accNo = "9100-0000", description = "Electricity bill", amount = 120.00 }
                     }
                 }),
-                ["/CashBook/delete/{docNo}"] = GetPathItem("DELETE", "Delete Cash Book Voucher", "Cash Book", "Delete a cash book voucher"),
+                ["/CashBook/delete/{docNo}"] = GetPathItem("DELETE", "Delete Cash Book Voucher", "Cash Book", "Delete a cash book voucher. Returns JSON."),
+                #endregion
+
+                #region General Ledger
+                ["/GL/getMovement"] = GetPathItemWithQueryParams("GET", "Get GL Movement", "General Ledger", "READ-ONLY ledger movement aggregated straight from GL postings (GLDTL), covering every source: sales/purchase invoices, debit/credit notes, Cash Book, journals, opening balances. Amounts are home-currency (Debit = HomeDR, Credit = HomeCR).\n\nReturns rows like {accNo, accDesc, accType, month, projNo, deptNo, debit, credit}.\n\n**Query Parameters:**\n- fromDate/toDate: dd-MM-yyyy range (optional; default all history to today)\n- groupBy: comma list of month,project,dept (optional; default month). Non-grouped dimensions return 'ALL'.", "fromDate,toDate,groupBy"),
                 #endregion
 
                 #region Database

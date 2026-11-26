@@ -79,8 +79,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 try
                 {
                     dynamic jsonData = Utils.ParseRequest(this.Request);
-                    Response response = Add(jsonData);
-                    return response;
+                    return Add(jsonData);
                 }
                 catch (Exception ex)
                 {
@@ -94,9 +93,7 @@ namespace GCR_autocount_api.Doctypes.GL
                 try
                 {
                     dynamic jsonData = Utils.ParseRequest(this.Request);
-                    Response response = Edit(jsonData);
-                    response.StatusCode = HttpStatusCode.OK;
-                    return response;
+                    return Edit(jsonData);
                 }
                 catch (Exception ex)
                 {
@@ -109,8 +106,7 @@ namespace GCR_autocount_api.Doctypes.GL
             {
                 try
                 {
-                    Response response = Delete(args.docNo);
-                    return response;
+                    return Delete(args.docNo);
                 }
                 catch (Exception ex)
                 {
@@ -178,8 +174,7 @@ namespace GCR_autocount_api.Doctypes.GL
         {
             try
             {
-                Response response = Delete(QueryDocNo());
-                return response;
+                return Delete(QueryDocNo());
             }
             catch (Exception ex)
             {
@@ -197,16 +192,32 @@ namespace GCR_autocount_api.Doctypes.GL
                 : AutoCount.GL.CashBook.CashBookType.CashPayment;
         }
 
+        /// <summary>
+        /// Reads an optional field accepting two spellings, e.g. projNo/project.
+        /// </summary>
+        private static string Pick(dynamic data, string a, string b)
+        {
+            try { if (data[a] != null && !string.IsNullOrEmpty(data[a].ToString())) return data[a].ToString(); }
+            catch { }
+            try { if (data[b] != null && !string.IsNullOrEmpty(data[b].ToString())) return data[b].ToString(); }
+            catch { }
+            return null;
+        }
+
         private static void SetHeader(AutoCount.GL.CashBook.CashBook doc, dynamic data)
         {
             if (data.docNo != null && !string.IsNullOrEmpty(data.docNo.ToString()))
                 doc.DocNo = data.docNo.ToString();
+            if (data.docNoFormatName != null && !string.IsNullOrEmpty(data.docNoFormatName.ToString()))
+                doc.DocNoFormatName = data.docNoFormatName.ToString();
             if (data.date != null)
                 doc.DocDate = DateStringToDateTime(data.date.ToString());
             if (data.payTo != null)
                 doc.PayTo = data.payTo.ToString();
             if (data.description != null)
                 doc.Description = data.description.ToString();
+            if (data.note != null)
+                doc.Note = data.note.ToString();
             if (data.currencyCode != null)
                 doc.CurrencyCode = data.currencyCode.ToString();
             if (data.currencyRate != null)
@@ -246,6 +257,12 @@ namespace GCR_autocount_api.Doctypes.GL
                         detail.TaxCode = d.taxCode.ToString();
                     if (d.inclusiveTax != null)
                         detail.InclusiveTax = bool.Parse(d.inclusiveTax.ToString());
+                    string dProj = Pick(d, "projNo", "project");
+                    if (!string.IsNullOrEmpty(dProj))
+                        detail.ProjNo = dProj;
+                    string dDept = Pick(d, "deptNo", "department");
+                    if (!string.IsNullOrEmpty(dDept))
+                        detail.DeptNo = dDept;
                 }
             }
         }
@@ -265,7 +282,7 @@ namespace GCR_autocount_api.Doctypes.GL
             }
         }
 
-        private string Add(dynamic data)
+        private object Add(dynamic data)
         {
             if (Auth.Login(userSession))
             {
@@ -281,7 +298,7 @@ namespace GCR_autocount_api.Doctypes.GL
                     doc.Save();
                     Log($"{DoctypeName} added: {doc.DocNo}");
 
-                    return $"{DoctypeName} added: {doc.DocNo}";
+                    return Response.AsJson(new { success = true, docNo = doc.DocNo, message = $"{DoctypeName} added: {doc.DocNo}" });
                 }
                 catch (Exception ex)
                 {
@@ -290,10 +307,10 @@ namespace GCR_autocount_api.Doctypes.GL
                 }
             }
             Log($"{DoctypeName} add error: Login failed");
-            return $"{DoctypeName} add error: Login failed";
+            return Response.AsJson(new { success = false, message = $"{DoctypeName} add error: Login failed" });
         }
 
-        private string Edit(dynamic data)
+        private object Edit(dynamic data)
         {
             if (Auth.Login(userSession))
             {
@@ -310,13 +327,13 @@ namespace GCR_autocount_api.Doctypes.GL
                 doc.Save();
                 Log($"{DoctypeName} edited: {docNo}");
 
-                return $"{DoctypeName} edited: {docNo}";
+                return Response.AsJson(new { success = true, docNo = docNo, message = $"{DoctypeName} edited: {docNo}" });
             }
             Log($"{DoctypeName} edit error: Login failed");
-            return $"{DoctypeName} edit error: Login failed";
+            return Response.AsJson(new { success = false, message = $"{DoctypeName} edit error: Login failed" });
         }
 
-        private string Delete(string docNo)
+        private object Delete(string docNo)
         {
             if (Auth.Login(userSession))
             {
@@ -326,10 +343,10 @@ namespace GCR_autocount_api.Doctypes.GL
                 cmd.Delete(docNo);
                 Log($"{DoctypeName} deleted: {docNo}");
 
-                return $"{DoctypeName} deleted: {docNo}";
+                return Response.AsJson(new { success = true, docNo = docNo, message = $"{DoctypeName} deleted: {docNo}" });
             }
             Log($"{DoctypeName} delete error: Login failed");
-            return $"{DoctypeName} delete error: Login failed";
+            return Response.AsJson(new { success = false, message = $"{DoctypeName} delete error: Login failed" });
         }
     }
 }

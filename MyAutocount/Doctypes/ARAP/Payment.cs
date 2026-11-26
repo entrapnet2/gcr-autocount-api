@@ -100,8 +100,7 @@ namespace GCR_autocount_api.Doctypes.ARAP
                 try
                 {
                     dynamic jsonData = Utils.ParseRequest(this.Request);
-                    Response response = Add(jsonData);
-                    return response;
+                    return Add(jsonData);
                 }
                 catch (Exception ex)
                 {
@@ -115,9 +114,7 @@ namespace GCR_autocount_api.Doctypes.ARAP
                 try
                 {
                     dynamic jsonData = Utils.ParseRequest(this.Request);
-                    Response response = Edit(jsonData);
-                    response.StatusCode = HttpStatusCode.OK;
-                    return response;
+                    return Edit(jsonData);
                 }
                 catch (Exception ex)
                 {
@@ -130,8 +127,7 @@ namespace GCR_autocount_api.Doctypes.ARAP
             {
                 try
                 {
-                    Response response = Delete(args.docNo);
-                    return response;
+                    return Delete(args.docNo);
                 }
                 catch (Exception ex)
                 {
@@ -230,15 +226,12 @@ namespace GCR_autocount_api.Doctypes.ARAP
         {
             try
             {
-                Response response = Delete(QueryDocNo());
-                return response;
+                return Delete(QueryDocNo());
             }
             catch (Exception ex)
             {
                 Log(ex.ToString());
-                Response response = ex.Message;
-                response.StatusCode = HttpStatusCode.InternalServerError;
-                return response;
+                return Utils.ToErrorResponse(ex);
             }
         }
 
@@ -267,10 +260,14 @@ namespace GCR_autocount_api.Doctypes.ARAP
                 doc.DocNoFormatName = data.docNoFormatName.ToString();
             if (data.currencyCode != null)
                 doc.CurrencyCode = data.currencyCode.ToString();
-            if (data.project != null)
-                doc.ProjNo = data.project.ToString();
-            if (data.department != null)
-                doc.DeptNo = data.department.ToString();
+            if (data.note != null)
+                doc.Note = data.note.ToString();
+            string projNo = Pick(data, "projNo", "project");
+            if (!string.IsNullOrEmpty(projNo))
+                doc.ProjNo = projNo;
+            string deptNo = Pick(data, "deptNo", "department");
+            if (!string.IsNullOrEmpty(deptNo))
+                doc.DeptNo = deptNo;
         }
 
         private static void AddDetails(AutoCount.ARAP.APPayment.APPaymentEntity doc, dynamic data)
@@ -307,7 +304,52 @@ namespace GCR_autocount_api.Doctypes.ARAP
             }
         }
 
-        private string Add(dynamic data)
+        /// <summary>
+        /// Reads an optional field accepting two spellings, e.g. projNo/project.
+        /// </summary>
+        private static string Pick(dynamic data, string a, string b)
+        {
+            try { if (data[a] != null && !string.IsNullOrEmpty(data[a].ToString())) return data[a].ToString(); }
+            catch { }
+            try { if (data[b] != null && !string.IsNullOrEmpty(data[b].ToString())) return data[b].ToString(); }
+            catch { }
+            return null;
+        }
+
+        /// <summary>
+        /// The payment master keeps header ProjNo natively, but the GL postings
+        /// created at save time do not inherit it, so it is applied to this
+        /// payment's GL lines (SourceType PP) right after a successful save.
+        /// </summary>
+        private void ApplyProjectToGL(string docNo, dynamic data)
+        {
+            try
+            {
+                string projNo = Pick(data, "projNo", "project");
+                if (string.IsNullOrEmpty(projNo)) return;
+                string dbName = userSession.DBSetting.DBName;
+                using (var conn = new SqlConnection(userSession.DBSetting.ConnectionString))
+                {
+                    conn.Open();
+                    using (var cmd = new SqlCommand(
+                        "UPDATE [" + dbName + "].[dbo].[GLDTL] SET ProjNo = @p " +
+                        "WHERE SourceType = 'PP' AND SourceKey = " +
+                        "(SELECT DocKey FROM [" + dbName + "].[dbo].[APPayment] WHERE DocNo = @d)", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@p", projNo);
+                        cmd.Parameters.AddWithValue("@d", docNo);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                Log($"{DoctypeName} GL project applied: {docNo} -> {projNo}");
+            }
+            catch (Exception ex)
+            {
+                Log($"{DoctypeName} GL project warning: {ex.Message}");
+            }
+        }
+
+        private object Add(dynamic data)
         {
             if (Auth.Login(userSession))
             {
@@ -322,9 +364,10 @@ namespace GCR_autocount_api.Doctypes.ARAP
                     AddKnockOff(doc, data);
 
                     cmd.SaveAPPayment(doc, userSession.LoginUserID, false);
+                    ApplyProjectToGL(doc.DocNo, data);
                     Log($"{DoctypeName} added: {doc.DocNo}");
 
-                    return $"{DoctypeName} added: {doc.DocNo}";
+                    return Response.AsJson(new { success = true, docNo = doc.DocNo, message = $"{DoctypeName} added: {doc.DocNo}" });
                 }
                 catch (Exception ex)
                 {
@@ -333,10 +376,10 @@ namespace GCR_autocount_api.Doctypes.ARAP
                 }
             }
             Log($"{DoctypeName} add error: Login failed");
-            return $"{DoctypeName} add error: Login failed";
+            return Response.AsJson(new { success = false, message = $"{DoctypeName} add error: Login failed" });
         }
 
-        private string Edit(dynamic data)
+        private object Edit(dynamic data)
         {
             if (Auth.Login(userSession))
             {
@@ -361,15 +404,16 @@ namespace GCR_autocount_api.Doctypes.ARAP
                 }
 
                 cmd.SaveAPPayment(doc, userSession.LoginUserID, false);
+                ApplyProjectToGL(docNo, data);
                 Log($"{DoctypeName} edited: {docNo}");
 
-                return $"{DoctypeName} edited: {docNo}";
+                return Response.AsJson(new { success = true, docNo = docNo, message = $"{DoctypeName} edited: {docNo}" });
             }
             Log($"{DoctypeName} edit error: Login failed");
-            return $"{DoctypeName} edit error: Login failed";
+            return Response.AsJson(new { success = false, message = $"{DoctypeName} edit error: Login failed" });
         }
 
-        private string Delete(string docNo)
+        private object Delete(string docNo)
         {
             if (Auth.Login(userSession))
             {
@@ -379,10 +423,10 @@ namespace GCR_autocount_api.Doctypes.ARAP
                 cmd.DeleteAPPayment(docNo, userSession.LoginUserID);
                 Log($"{DoctypeName} deleted: {docNo}");
 
-                return $"{DoctypeName} deleted: {docNo}";
+                return Response.AsJson(new { success = true, docNo = docNo, message = $"{DoctypeName} deleted: {docNo}" });
             }
             Log($"{DoctypeName} delete error: Login failed");
-            return $"{DoctypeName} delete error: Login failed";
+            return Response.AsJson(new { success = false, message = $"{DoctypeName} delete error: Login failed" });
         }
     }
 }

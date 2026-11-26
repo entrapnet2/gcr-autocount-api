@@ -542,6 +542,13 @@ foreach ($ep in @("/CashBook/getAll", "/CashBook/count")) {
     Write-Host "   $($result.Status): GET $ep" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
 }
 
+Write-Host "`n13. Testing PaymentMethod / Project / Department / Account / GL..." -ForegroundColor Yellow
+
+foreach ($ep in @("/PaymentMethod/getAll", "/PaymentMethod/count", "/Project/getAll", "/Project/count", "/Department/getAll", "/Department/count", "/Account/getAll", "/Account/count", "/GL/getMovement", "/GL/getMovement?groupBy=month,project")) {
+    $result = Test-ApiEndpoint -Name "GET $ep" -Method Get -Endpoint $ep -Headers $headers
+    Write-Host "   $($result.Status): GET $ep" -ForegroundColor $(if($result.Status -eq "PASS"){"Green"}else{"Red"})
+}
+
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "TEST SUMMARY" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan

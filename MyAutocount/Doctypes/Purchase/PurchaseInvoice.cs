@@ -74,8 +74,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
                 try
                 {
                     dynamic jsonData = Utils.ParseRequest(this.Request);
-                    Response response = Add(jsonData);
-                    return response;
+                    return Add(jsonData);
                 }
                 catch (Exception ex)
                 {
@@ -89,9 +88,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
                 try
                 {
                     dynamic jsonData = Utils.ParseRequest(this.Request);
-                    Response response = Edit(jsonData);
-                    response.StatusCode = HttpStatusCode.OK;
-                    return response;
+                    return Edit(jsonData);
                 }
                 catch (Exception ex)
                 {
@@ -104,8 +101,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
             {
                 try
                 {
-                    Response response = Delete(args.docNo);
-                    return response;
+                    return Delete(args.docNo);
                 }
                 catch (Exception ex)
                 {
@@ -130,7 +126,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
             });
         }
 
-        private string Add(dynamic data)
+        private object Add(dynamic data)
         {
             if (Auth.Login(userSession))
             {
@@ -212,7 +208,7 @@ namespace GCR_autocount_api.Doctypes.Purchase
                     doc.Save();
                     Log($"{DoctypeName} added: {doc.DocNo}");
 
-                    return $"{DoctypeName} added: {doc.DocNo}";
+                    return Response.AsJson(new { success = true, docNo = doc.DocNo, message = $"{DoctypeName} added: {doc.DocNo}" });
                 }
                 catch (Exception ex)
                 {
@@ -221,10 +217,10 @@ namespace GCR_autocount_api.Doctypes.Purchase
                 }
             }
             Log($"{DoctypeName} add error: Login failed");
-            return $"{DoctypeName} add error: Login failed";
+            return Response.AsJson(new { success = false, message = $"{DoctypeName} add error: Login failed" });
         }
 
-        private string Edit(dynamic data)
+        private object Edit(dynamic data)
         {
             if (Auth.Login(userSession))
             {
@@ -302,14 +298,14 @@ namespace GCR_autocount_api.Doctypes.Purchase
                 doc.Save();
                 Log($"{DoctypeName} edited: {docNo}");
 
-                return $"{DoctypeName} edited: {docNo}";
+                return Response.AsJson(new { success = true, docNo = docNo, message = $"{DoctypeName} edited: {docNo}" });
 
             }
             Log($"{DoctypeName} edit error: Login failed");
-            return $"{DoctypeName} edit error: Login failed";
+            return Response.AsJson(new { success = false, message = $"{DoctypeName} edit error: Login failed" });
         }
 
-        private string Delete(string docNo)
+        private object Delete(string docNo)
         {
             if (Auth.Login(userSession))
             {
@@ -319,10 +315,10 @@ namespace GCR_autocount_api.Doctypes.Purchase
                 cmd.Delete(docNo);
                 Log($"{DoctypeName} deleted: {docNo}");
 
-                return $"{DoctypeName} deleted: {docNo}";
+                return Response.AsJson(new { success = true, docNo = docNo, message = $"{DoctypeName} deleted: {docNo}" });
             }
             Log($"{DoctypeName} delete error: Login failed");
-            return $"{DoctypeName} delete error: Login failed";
+            return Response.AsJson(new { success = false, message = $"{DoctypeName} delete error: Login failed" });
         }
     }
 }

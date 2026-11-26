@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## 2026-11-10 (firm follow-ups: projects, formats, GL movement, JSON, notes)
+- **Root cause of "projNo ignored"**: NOT the SDK — the firm sends `projNo` but the code read `project` (JObject keys are case-sensitive; missing key = silent null). My own tests copied their spelling and chased a phantom SDK limitation (row fallback, UpdatePayment, SQL backfill — all unnecessary). Lesson: when a field "is ignored", first verify the exact key spelling end-to-end (log shows the body).
+- **AR/AP header ProjNo DOES work via entity** (`doc.ProjNo = "TST"` persists + propagates to GLDTL automatically). Reverted the post-save SQL backfill; kept only GLDTL sync where native flow drops it — none needed for Receipt/Payment. Verified: master + both GL legs carry TST.
+- **CashBook**: detail `ProjNo`/`DeptNo` exist on the entity (were just never set — added + verified, GL inherits natively); header has NO ProjNo (lines carry it); `DocNoFormatName` selects numbering (PV/OR formats); `Note` stored as RTF by AutoCount (reads back RTF, not plain).
+- **JSON write responses**: Receipt/Payment/CashBook/PurchaseInvoice add/edit/delete now return `{success, docNo, message}` (firm asked; e2e unaffected as it doesn't test those writes).
+- **New reads**: PaymentMethod/Project/Department (master tables), Account (GLMast+AccType), GL/getMovement (GLDTL grouped by month/project/dept, HomeDR/HomeCR, `ALL` for ungrouped dims).
+- **Test masters**: inserted TST project/dept + SLS parent via SQL for live tests (Project/Dept require valid ParentProjNo/ParentDeptNo or NULL root; LastUpdate=0 is normal), cleaned up docs + masters afterwards.
+
 ## 2026-11-10 (midnight log split, keep 7)
 - **Request**: split logs every 12am so a never-restarted service doesn't grow one giant file; same keep-7-newest rule.
 - **Implemented**: `Utils.StartDailyRotation()` (called from `MyService.Start`) arms a one-shot timer to next local midnight, then re-arms every firing — same versioned naming + retention as startup rotation (refactored into RotateLogCore/EnforceLogRetention). All failures swallowed; logLock serializes with writers.
